@@ -35,8 +35,6 @@ Open source firmware for the Bafang SW102 display, built for genuine Bafang mid-
 
 ## Installing (ST-Link)
 
-![SW102 main board with SWD pads labeled (3V3, DIO, CLK, GND)](screenshots/PCB.jpeg)
-
 The simple, end-user version of the flashing procedure - tested on real hardware. No build tools needed if you're using a pre-built `.hex` release file.
 
 ### What you need
@@ -61,12 +59,25 @@ Plugging the ST-Link into USB alone is not enough - Windows needs the driver, or
 
 Open the SW102 display to expose the 4 programming pads: **GND, CLK (SWCLK), DIO (SWDIO), 3V3**.
 
+<table>
+<tr>
+<td>
+
 | SW102 pad | ST-Link V2 |
 |---|---|
 | GND | GND |
 | 3V3 | 3.3V |
 | CLK | SWCLK |
 | DIO | SWDIO |
+
+</td>
+<td>
+
+<img src="screenshots/PCB.jpeg" width="256" alt="SW102 main board with SWD pads labeled (3V3, DIO, CLK, GND)">
+
+</td>
+</tr>
+</table>
 
 You can power the display straight from the ST-Link's 3.3V pin for flashing - no battery or controller cable needed.
 
