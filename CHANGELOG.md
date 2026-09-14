@@ -2,6 +2,15 @@
 
 Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
 
+## 0.0.5 (2026-09-14)
+
+- "Trip reset" moved to the top level of the menu, directly under "Unit"
+- "Reset" submenu renamed to "Factory reset" (confirm button renamed to "Confirm factory reset")
+
+## 0.0.4 (2026-09-14)
+
+- Fixed a second light bug: `INIT_DISPLAY` (same bytes as "lights off") was being sent at the start of every poll cycle, not just once at startup - this raced against the real light command sent later in the same cycle and made the light blink continuously. Now sent only once at cold start or after a real communication timeout, matching EggSPEED's `DisplayStateMachine.kt` exactly
+
 ## 0.0.3 (2026-09-14)
 
 - Fixed light bug: the light command is now sent unconditionally on every poll cycle (matching the verified behavior in EggSPEED), instead of only on state change - the previous version caused the light to blink once and turn off
