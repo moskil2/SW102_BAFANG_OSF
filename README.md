@@ -32,7 +32,7 @@ Firmware tested on real hardware (flashed via SWD/OpenOCD and an ST-Link V2, cur
 
 ## License and provenance
 
-The base fork (`anszom/SW102_LCD`, itself a fork of `OpenSourceEBike/Color_LCD`) is GPL-3.0 licensed. This project is currently private and undistributed. Before any public distribution, the code in `patches/` will be replaced with a fully independent implementation.
+The base fork (`anszom/SW102_LCD`, itself a fork of `OpenSourceEBike/Color_LCD`) is licensed under GPL-3.0. The `patches/` directory tracks modifications to fork-owned files as a diff, keeping this repository's own code (`firmware/`) clearly separated from the GPL-derived base. Public distribution will require replacing `patches/` with a fully independent implementation of the affected files.
 
 ## Changelog
 
