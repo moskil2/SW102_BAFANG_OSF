@@ -29,21 +29,6 @@ Firmware for the Bafang SW102 display, communicating with a genuine OEM Bafang m
 - Info submenu: firmware version, hardware, developer credit, website
 - Reset submenu: full factory reset, trip-only reset
 
-## Contents
-
-- **`firmware/`** - modules written from scratch: Bafang UART protocol (`bafang_protocol.*`), telemetry state machine (`bafang_display.*`), current/voltage calibration (`bafang_calibration.*`), settings (`bafang_settings.*`), persistent flash storage (`bafang_storage.*`), trip/odo (`bafang_trip.*`), range/energy-use estimator - a port of EggSPEED's `EnergyAnalyzer.kt` (`bafang_energy.*`), firmware version string (`firmware_version.h`), integration bridges (`*_bridge.h`), plus the full family of hand-drawn cockpit fonts, the menu marker icon, and the boot screen logo (`font_*.xbm`, `icon_*.xbm`, `logo_eggspeed.xbm`)
-- **`emu-rs/`** - terminal firmware emulator (Rust/ratatui) - compiles and runs the REAL firmware C code (not an approximation), renders the framebuffer as Braille in the terminal, simulates a fake Bafang controller or bridges to a real serial port (`--serial COM3`). Requires MinGW-w64 GCC on PATH (target `x86_64-pc-windows-gnu` - MSVC doesn't support the GCC syntax used in the firmware) - `cargo build --target x86_64-pc-windows-gnu`
-- **`patches/sw102_lcd.patch`** - diff of our modifications to the fork's own files only (`git diff --binary`), keeping GPL-derived files separate from our own code in `firmware/`; files we authored from scratch (`bafang_*`, fonts/icons, `emu-rs/`) are committed here in full, not via the patch
-- **`font_speed_work/`** - scripts for generating cockpit fonts (pixel-by-pixel extraction from hand-drawn grid templates) and pixel-accurate Python simulations (`simulate_cockpit.py`, `simulate_menu.py`) used to iterate on layout before touching C code
-- **`research.md`** - full technical documentation of the project (protocol, hardware, architecture decisions, history)
-
-## Building
-
-1. Clone the base fork: `git clone https://github.com/anszom/SW102_LCD.git` (branch `sw102-new`)
-2. Apply the patch: `git apply /path/to/patches/sw102_lcd.patch` inside the fork directory
-3. Copy `firmware/*` from this repo into the fork's corresponding `firmware/SW102/include/` and `firmware/SW102/src/sw102/` directories (if the patch doesn't already add these as new files in your git version - `git apply` with new-file support should do this automatically if the patch was generated from `git diff` after `git add -A`, which also covers new files)
-4. Build per the instructions in `research.md` (arm-none-eabi-gcc, make, OpenOCD)
-
 ## Installing (ST-Link)
 
 The simple, end-user version of the flashing procedure - tested on real hardware. No build tools needed if you're using a pre-built `.hex` release file.
@@ -121,7 +106,7 @@ Firmware tested on real hardware (flashed via SWD/OpenOCD and an ST-Link V2, cur
 
 ## License and provenance
 
-The base fork (`anszom/SW102_LCD`, itself a fork of `OpenSourceEBike/Color_LCD`) is licensed under GPL-3.0. The `patches/` directory tracks modifications to fork-owned files as a diff, keeping this repository's own code (`firmware/`) clearly separated from the GPL-derived base. Public distribution will require replacing `patches/` with a fully independent implementation of the affected files.
+The base fork (`anszom/SW102_LCD`, itself a fork of `OpenSourceEBike/Color_LCD`) is licensed under GPL-3.0. This repository distributes only the compiled firmware image and installation instructions - source code is not published here.
 
 ## Changelog
 
