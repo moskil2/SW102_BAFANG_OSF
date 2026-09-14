@@ -15,15 +15,19 @@ Firmware for the Bafang SW102 display, communicating with a genuine OEM Bafang m
 
 ## Menu
 
-- Unit (km/h / mph), Wheel size, Speed limit, Auto power off timer
-- Current cal. / Voltage cal. (display calibration multipliers)
-- ODO (manually set/correct odometer)
-- Battery submenu (pack capacity in Wh)
-- Brightness submenu (manual/auto mode, level)
-- Cockpit submenu (separators on/off, PAS bar on/off)
-- Screen test (fills display white)
-- Info submenu (firmware version, hardware, developer credit, website)
-- Reset submenu (full factory reset, trip-only reset)
+- Unit switch (km/h / mph)
+- Wheel size selection
+- Speed limit (sent directly to the controller)
+- Auto power off timer
+- Current calibration (adjustable display multiplier)
+- Voltage calibration (adjustable display multiplier)
+- ODO (manually set or correct the odometer)
+- Battery submenu: pack capacity (Wh)
+- Brightness submenu: manual or automatic mode, adjustable level
+- Cockpit submenu: toggle separators, toggle the PAS bar
+- Screen test (fills the display white for a dead-pixel check)
+- Info submenu: firmware version, hardware, developer credit, website
+- Reset submenu: full factory reset, trip-only reset
 
 ## Contents
 
