@@ -1,6 +1,6 @@
 # SW102 Firmware
 
-Open source firmware for the Bafang SW102 display, built for genuine Bafang mid-drive motors. A complete rewrite of the display's firmware - live telemetry, full assist control, lights, and a redesigned cockpit and menu, all running natively on your existing hardware. The end goal: full integration with the **EggSPEED** Android app over Bluetooth.
+Open source firmware for the Bafang SW102 display, built for genuine Bafang mid-drive motors. A complete rewrite of the display's firmware - live telemetry, full assist control, lights, and a redesigned cockpit and menu, all running natively on your existing hardware. The end goal: full integration with the **EggSPEED** Android app ([GitHub](https://github.com/moskil2/EggSPEED), [Google Play](https://play.google.com/store/apps/details?id=app.spotrobotics.eggspeed)) over Bluetooth.
 
 ## Cockpit (main screen)
 
@@ -36,7 +36,6 @@ The simple, end-user version of the flashing procedure - tested on real hardware
 ### What you need
 
 - An ST-Link V2 programmer (a cheap clone is fine, ~$5) - e.g. [search on Amazon](https://www.amazon.com/s?k=ST-Link+V2+programmer)
-- 4 jumper wires (or pogo pins for a solderless connection)
 - A Windows PC
 - **OpenOCD** - download the Windows build from the [xPack OpenOCD releases page](https://github.com/xpack-dev-tools/openocd-xpack/releases) (the `...win32-x64.zip` asset) and unzip it anywhere, e.g. `C:\OpenOCD`
 - The **ST-Link driver** (see step 1 below)
