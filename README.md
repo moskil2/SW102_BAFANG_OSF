@@ -1,6 +1,6 @@
 # SW102 Firmware
 
-Firmware for the Bafang SW102 display, communicating with a genuine OEM Bafang mid-drive controller over its UART protocol. Replaces the stock display's firmware entirely - telemetry, assist control, lights, and menu are all handled by this codebase, built on top of the `anszom/SW102_LCD` fork for the low-level display/button/BLE drivers.
+Open source firmware for the Bafang SW102 display, built for genuine Bafang mid-drive motors. A complete rewrite of the display's firmware - live telemetry, full assist control, lights, and a redesigned cockpit and menu, all running natively on your existing hardware. The end goal: full integration with the **EggSPEED** Android app over Bluetooth.
 
 ## Cockpit (main screen)
 
