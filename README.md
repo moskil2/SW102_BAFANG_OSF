@@ -1,8 +1,29 @@
 # SW102 Firmware
 
-Custom firmware for the Bafang SW102 display, targeting full OEM feature parity plus adjustable current/power display calibration.
+Firmware for the Bafang SW102 display, communicating with a genuine OEM Bafang mid-drive controller over its UART protocol. Replaces the stock display's firmware entirely - telemetry, assist control, lights, and menu are all handled by this codebase, built on top of the `anszom/SW102_LCD` fork for the low-level display/button/BLE drivers.
 
-Built against `anszom/SW102_LCD` (branch `sw102-new`). Changes to fork files are tracked as a patch (`patches/sw102_lcd.patch`); modules written from scratch are committed in full under `firmware/`.
+## Cockpit (main screen)
+
+- Top bar: battery voltage (left) and battery percentage (right)
+- Speed: large digits with one decimal, unit label (km/h or mph)
+- Power: motor power in watts
+- Assist level: number flanked by a 10-segment bar-graph indicator, status icons above it (headlight, Bluetooth connection, brake), replaced by an animated walk-assist icon while walk assist is held
+- Trip distance, Odometer, and estimated Range rows
+- Average / current energy consumption row (Wh/km or Wh/mile)
+- Optional separator lines between rows (toggle in menu)
+- Controls: UP/DOWN short press = assist level up/down; UP long press = toggle headlight; DOWN long press (hold) = walk assist; M long press = open menu
+
+## Menu
+
+- Unit (km/h / mph), Wheel size, Speed limit, Auto power off timer
+- Current cal. / Voltage cal. (display calibration multipliers)
+- ODO (manually set/correct odometer)
+- Battery submenu (pack capacity in Wh)
+- Brightness submenu (manual/auto mode, level)
+- Cockpit submenu (separators on/off, PAS bar on/off)
+- Screen test (fills display white)
+- Info submenu (firmware version, hardware, developer credit, website)
+- Reset submenu (full factory reset, trip-only reset)
 
 ## Contents
 
