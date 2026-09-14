@@ -92,6 +92,27 @@ Disconnect the ST-Link, connect normal power (battery or the controller cable), 
 - **`Error: init mode failed` / no target detected** - almost always a bad physical connection on the CLK/DIO pads. Double-check the wires are making solid contact.
 - **Why two separate commands?** - Running erase and write in the same OpenOCD session fails with `error writing to flash`. The chip needs a reset in between, which is why the erase and the write-and-verify are two separate commands rather than one long one.
 
+## Updating (Bluetooth)
+
+Once the bootloader is installed (first flash via ST-Link), later firmware updates can be done wirelessly - no need to open the case again.
+
+### What you need
+
+- The **nRF Connect** app (Android/iOS, by Nordic Semiconductor)
+- The firmware update package, e.g. `SW102_BAF_FW_X.Y.Z.zip`, transferred to your phone
+
+### Steps
+
+1. With the display powered on, hold **M + PWR together for at least 8 seconds**, until the screen goes dark - this confirms it's now in bootloader DFU mode.
+2. Open **nRF Connect** on your phone, scan for Bluetooth devices, and connect to **"SW102_DFU"**.
+3. Start a DFU update in the app and select the `.zip` file (don't unzip it first).
+4. Wait for the upload to finish.
+5. Power-cycle the display and turn it back on normally.
+
+### Troubleshooting
+
+- **Boots back into DFU mode instead of the app** - hold the power button longer (up to 10 seconds) on the first boot after an update; this is a known quirk of the bootloader.
+
 ## Preview (simulation)
 
 <img src="font_speed_work/cockpit_simulation_natural.png" alt="SW102 cockpit simulation - speed, power, assist level, trip/odo/range" width="260">
