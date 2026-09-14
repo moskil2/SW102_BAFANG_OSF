@@ -1,35 +1,35 @@
 # SW102 Firmware
 
-Własny firmware na wyświetlacz Bafang SW102, docelowo z pełną funkcjonalnością OEM oraz regulowaną kalibracją wyświetlanego prądu/mocy.
+Custom firmware for the Bafang SW102 display, targeting full OEM feature parity plus adjustable current/power display calibration.
 
-To repozytorium zawiera **wyłącznie kod, który sami napisaliśmy** - nie zawiera pełnego forka bazowego (`anszom/SW102_LCD`), z którym pracujemy równolegle lokalnie. Zamiast kopiować cały fork (w większości kod Nordic SDK i UI oryginalnego autora), nasze zmiany w jego plikach są tu jako plik różnicowy (`patches/sw102_lcd.patch`).
+Built against `anszom/SW102_LCD` (branch `sw102-new`). Changes to fork files are tracked as a patch (`patches/sw102_lcd.patch`); modules written from scratch are committed in full under `firmware/`.
 
-## Zawartość
+## Contents
 
-- **`firmware/`** - moduły napisane od zera: protokół Bafang UART (`bafang_protocol.*`), maszyna stanów telemetrii (`bafang_display.*`), kalibracja prądu/napięcia (`bafang_calibration.*`), ustawienia (`bafang_settings.*`), trwały zapis ustawień we flash (`bafang_storage.*`), trip/odo (`bafang_trip.*`), estymator zasięgu/zużycia energii - port EggSPEED's `EnergyAnalyzer.kt` (`bafang_energy.*`), numer wersji firmware (`firmware_version.h`), mosty integracyjne (`*_bridge.h`), oraz cała rodzina ręcznie narysowanych czcionek kokpitu, ikona-znacznik menu i logo ekranu boot (`font_*.xbm`, `icon_*.xbm`, `logo_eggspeed.xbm`)
-- **`emu-rs/`** - terminalowy emulator firmware (Rust/ratatui) - kompiluje i uruchamia PRAWDZIWY kod C firmware (nie przybliżenie), renderuje framebuffer jako Braille'a w terminalu, symuluje fałszywy kontroler Bafang albo mostkuje do prawdziwego portu szeregowego (`--serial COM3`). Wymaga MinGW-w64 GCC na PATH (target `x86_64-pc-windows-gnu` - MSVC nie obsługuje składni GCC użytej w firmware) - `cargo build --target x86_64-pc-windows-gnu`
-- **`patches/sw102_lcd.patch`** - dokładna różnica względem forka bazowego (`git diff --binary`, zawiera zarówno modyfikacje plików forka jak i dodanie nowych plików/`emu-rs/`)
-- **`font_speed_work/`** - skrypty do generowania czcionek kokpitu (ekstrakcja piksel-po-pikselu z ręcznie rysowanych szablonów na siatce) oraz pixel-accurate symulacje w Pythonie (`simulate_cockpit.py`, `simulate_menu.py`) używane do iterowania nad layoutem przed dotknięciem kodu C
-- **`research.md`** - pełna dokumentacja techniczna projektu (protokół, sprzęt, decyzje architektoniczne, historia)
+- **`firmware/`** - modules written from scratch: Bafang UART protocol (`bafang_protocol.*`), telemetry state machine (`bafang_display.*`), current/voltage calibration (`bafang_calibration.*`), settings (`bafang_settings.*`), persistent flash storage (`bafang_storage.*`), trip/odo (`bafang_trip.*`), range/energy-use estimator - a port of EggSPEED's `EnergyAnalyzer.kt` (`bafang_energy.*`), firmware version string (`firmware_version.h`), integration bridges (`*_bridge.h`), plus the full family of hand-drawn cockpit fonts, the menu marker icon, and the boot screen logo (`font_*.xbm`, `icon_*.xbm`, `logo_eggspeed.xbm`)
+- **`emu-rs/`** - terminal firmware emulator (Rust/ratatui) - compiles and runs the REAL firmware C code (not an approximation), renders the framebuffer as Braille in the terminal, simulates a fake Bafang controller or bridges to a real serial port (`--serial COM3`). Requires MinGW-w64 GCC on PATH (target `x86_64-pc-windows-gnu` - MSVC doesn't support the GCC syntax used in the firmware) - `cargo build --target x86_64-pc-windows-gnu`
+- **`patches/sw102_lcd.patch`** - exact diff against the base fork (`git diff --binary`, covers both modifications to fork files and new files/`emu-rs/`)
+- **`font_speed_work/`** - scripts for generating cockpit fonts (pixel-by-pixel extraction from hand-drawn grid templates) and pixel-accurate Python simulations (`simulate_cockpit.py`, `simulate_menu.py`) used to iterate on layout before touching C code
+- **`research.md`** - full technical documentation of the project (protocol, hardware, architecture decisions, history)
 
-## Jak zbudować
+## Building
 
-1. Sklonuj bazowy fork: `git clone https://github.com/anszom/SW102_LCD.git` (branch `sw102-new`)
-2. Zastosuj patch: `git apply /ścieżka/do/patches/sw102_lcd.patch` w katalogu forka
-3. Skopiuj `firmware/*.py` z tego repo do odpowiednich katalogów `firmware/SW102/include/` i `firmware/SW102/src/sw102/` forka (jeśli patch nie obejmuje nowych plików w Twojej wersji gita - `git apply` z opcją tworzenia nowych plików powinien to zrobić automatycznie, jeśli patch był generowany z `git diff` po `git add -A`, co obejmuje też nowe pliki)
-4. Zbuduj wg instrukcji w `research.md` (arm-none-eabi-gcc, make, OpenOCD)
+1. Clone the base fork: `git clone https://github.com/anszom/SW102_LCD.git` (branch `sw102-new`)
+2. Apply the patch: `git apply /path/to/patches/sw102_lcd.patch` inside the fork directory
+3. Copy `firmware/*` from this repo into the fork's corresponding `firmware/SW102/include/` and `firmware/SW102/src/sw102/` directories (if the patch doesn't already add these as new files in your git version - `git apply` with new-file support should do this automatically if the patch was generated from `git diff` after `git add -A`, which also covers new files)
+4. Build per the instructions in `research.md` (arm-none-eabi-gcc, make, OpenOCD)
 
-## Podgląd (symulacja)
+## Preview (simulation)
 
-<img src="font_speed_work/cockpit_simulation_natural.png" alt="Symulacja kokpitu SW102 - predkosc, moc, poziom wspomagania, trip/odo/range" width="260">
+<img src="font_speed_work/cockpit_simulation_natural.png" alt="SW102 cockpit simulation - speed, power, assist level, trip/odo/range" width="260">
 
-Pixel-accurate symulacja layoutu kokpitu (`font_speed_work/simulate_cockpit.py`) z ręcznie
-narysowanymi czcionkami, używana do iterowania nad UI przed dotknięciem kodu C.
+Pixel-accurate cockpit layout simulation (`font_speed_work/simulate_cockpit.py`) using the
+hand-drawn fonts, used to iterate on the UI before touching C code.
 
 ## Status
 
-Firmware przetestowany na prawdziwym sprzęcie (flashowanie przez SWD/OpenOCD i ST-Link V2, aktualna wersja `SW102_BAF_0.0.3`). Działające na sprzęcie funkcje: protokół Bafang UART (telemetria, światła, wspomaganie), kalibracja prądu i napięcia, trip/odo z opcją resetu, przełącznik jednostek km/h↔mph, menu z ikoną-znacznikiem zamiast podświetlenia, ekran startowy z numerem wersji. Konwencja wersjonowania: `SW102_BAF_X.Y.Z`, każda wersja wgrana na sprzęt jest zapisywana jako osobny plik `.hex` (nienadpisywany). Buduje się bez błędów na obu toolchainach (ARM oraz emulator). Szczegóły i historia w `research.md` i `CHANGELOG.md`.
+Firmware tested on real hardware (flashed via SWD/OpenOCD and an ST-Link V2, current version `SW102_BAF_0.0.3`). Working on hardware: Bafang UART protocol (telemetry, lights, assist), current and voltage calibration, trip/odo with reset, km/h<->mph unit switch, menu with a marker icon instead of highlight, boot screen with version number. Versioning convention: `SW102_BAF_X.Y.Z`, each version flashed to hardware is saved as its own `.hex` file (never overwritten). Builds cleanly on both toolchains (ARM and emulator). Details and history in `research.md` and `CHANGELOG.md`.
 
-## Licencja i pochodzenie
+## License and provenance
 
-Bazowy fork (`anszom/SW102_LCD`, sam fork `OpenSourceEBike/Color_LCD`) jest na licencji GPL-3.0. Ten projekt jest obecnie prywatny i niedystrybuowany. Przed jakąkolwiek dystrybucją publiczną kod w `patches/` zostanie zastąpiony w pełni niezależną implementacją.
+The base fork (`anszom/SW102_LCD`, itself a fork of `OpenSourceEBike/Color_LCD`) is GPL-3.0 licensed. This project is currently private and undistributed. Before any public distribution, the code in `patches/` will be replaced with a fully independent implementation.
