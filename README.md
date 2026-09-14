@@ -1,10 +1,23 @@
-# SW102 Firmware
+# SW102 Modded Firmware for Bafang Controllers
 
 Open source firmware for the Bafang SW102 display, built for genuine Bafang mid-drive motors. A complete rewrite of the display's firmware - live telemetry, full assist control, lights, and a redesigned cockpit and menu, all running natively on your existing hardware. The end goal: full integration with the **EggSPEED** Android app ([GitHub](https://github.com/moskil2/EggSPEED), [Google Play](https://play.google.com/store/apps/details?id=app.spotrobotics.eggspeed)) over Bluetooth.
 
 | ![Boot screen](screenshots/1.jpeg) | ![Main cockpit screen](screenshots/2.jpeg) | ![Menu, marker icon](screenshots/3.jpeg) | ![Menu, top level](screenshots/4.jpeg) |
 |:---:|:---:|:---:|:---:|
 | 1. Boot screen | 2. Cockpit | 3. Menu (marker) | 4. Menu (top level) |
+
+## Compatibility
+
+Uses the standard Bafang UART display protocol - the same protocol the stock display uses across this whole controller family:
+
+- BBS01 / BBS01B
+- BBS02 / BBS02B
+- BBSHD
+- M400
+- M420
+- M620 / G510 Ultra
+
+Tested on real hardware with a BBSHD controller.
 
 ## Cockpit (main screen)
 
