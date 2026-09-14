@@ -4,7 +4,7 @@ This is the simple, end-user version of the flashing procedure - tested on real 
 
 ## What you need
 
-- An ST-Link V2 programmer (a cheap clone is fine, ~$5)
+- An ST-Link V2 programmer (a cheap clone is fine, ~$5) - e.g. [search on Amazon](https://www.amazon.com/s?k=ST-Link+V2+programmer)
 - 4 jumper wires (or pogo pins for a solderless connection)
 - A Windows PC
 - **OpenOCD** - download the Windows build from the [xPack OpenOCD releases page](https://github.com/xpack-dev-tools/openocd-xpack/releases) (the `...win32-x64.zip` asset) and unzip it anywhere, e.g. `C:\OpenOCD`
