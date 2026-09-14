@@ -17,7 +17,7 @@ This single `.hex` file is a complete, ready-to-flash image - it already contain
 
 Plugging the ST-Link into USB alone is not enough - Windows needs the driver, or OpenOCD will fail with `Error: open failed`.
 
-1. Download **STSW-LINK009** from ST's website.
+1. Download **[STSW-LINK009](https://www.st.com/en/development-tools/stsw-link009.html)** from ST's website.
 2. Unzip it and run `stlink_winusb_install.bat` as Administrator.
 3. Unplug and replug the ST-Link.
 
