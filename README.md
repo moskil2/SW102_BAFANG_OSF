@@ -52,8 +52,12 @@ The simple, end-user version of the flashing procedure - tested on real hardware
 
 - An ST-Link V2 programmer (a cheap clone is fine, ~$5)
 - 4 jumper wires (or pogo pins for a solderless connection)
-- A PC with [OpenOCD](https://openocd.org/) and the ST-Link driver installed
-- The firmware `.hex` file (e.g. `SW102_BAF_X.Y.Z.hex`)
+- A Windows PC
+- **OpenOCD** - download the Windows build from the [xPack OpenOCD releases page](https://github.com/xpack-dev-tools/openocd-xpack/releases) (the `...win32-x64.zip` asset) and unzip it anywhere, e.g. `C:\OpenOCD`
+- The **ST-Link driver** (see step 1 below)
+- The firmware `.hex` file from this repo's Releases (e.g. `SW102_BAF_X.Y.Z.hex`) - download it and note where you saved it, e.g. `C:\SW102\`
+
+This single `.hex` file is a complete, ready-to-flash image - it already contains the bootloader, the Nordic SoftDevice (BLE stack), and the application, merged together at build time. You don't need to download anything else from any other repository.
 
 ### 1. Install the ST-Link driver
 
@@ -78,19 +82,21 @@ You can power the display straight from the ST-Link's 3.3V pin for flashing - no
 
 ### 3. Flash the firmware
 
-Open a terminal where OpenOCD is installed and run these two commands, one after the other (they must be separate - see Troubleshooting below).
+1. Open a Command Prompt (press the Windows key, type `cmd`, press Enter).
+2. Go into OpenOCD's `bin` folder - adjust the path to wherever you unzipped it in "What you need":
+   ```
+   cd C:\OpenOCD\bin
+   ```
+3. Run the erase command (paste it exactly, then press Enter):
+   ```
+   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; nrf51 mass_erase; shutdown"
+   ```
+4. Run the write-and-verify command, using the full path to wherever you saved the `.hex` file:
+   ```
+   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; flash write_image C:\SW102\SW102_BAF_X.Y.Z.hex; verify_image C:\SW102\SW102_BAF_X.Y.Z.hex; reset halt; resume; shutdown"
+   ```
 
-**Erase:**
-```
-openocd -f interface/stlink.cfg -f target/nrf51.cfg -c "init; reset init; nrf51 mass_erase; shutdown"
-```
-
-**Write and verify** (replace the filename with your actual `.hex` file):
-```
-openocd -f interface/stlink.cfg -f target/nrf51.cfg -c "init; reset init; flash write_image SW102_BAF_X.Y.Z.hex; verify_image SW102_BAF_X.Y.Z.hex; reset halt; resume; shutdown"
-```
-
-If `verify_image` reports no errors, the flash succeeded.
+These must be two separate commands, run one after the other - see Troubleshooting below for why. If `verify_image` reports no errors, the flash succeeded.
 
 ### 4. Check it worked
 
@@ -100,6 +106,7 @@ Disconnect the ST-Link, connect normal power (battery or the controller cable), 
 
 - **`Error: open failed`** - the ST-Link driver isn't installed, or the cable/USB connection is loose. Recheck step 1, unplug/replug.
 - **`Error: init mode failed` / no target detected** - almost always a bad physical connection on the CLK/DIO pads. Double-check the wires are making solid contact.
+- **Why two separate commands?** - Running erase and write in the same OpenOCD session fails with `error writing to flash`. The chip needs a reset in between, which is why the erase and the write-and-verify are two separate commands rather than one long one.
 
 ## Preview (simulation)
 
