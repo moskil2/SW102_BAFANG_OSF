@@ -158,6 +158,18 @@ Firmware tested on real hardware (flashed via SWD/OpenOCD and an ST-Link V2, cur
 
 The base fork (`anszom/SW102_LCD`, itself a fork of `OpenSourceEBike/Color_LCD`) is licensed under GPL-3.0. This repository distributes only the compiled firmware image and installation instructions - source code is not published here.
 
+## Resources
+
+Current build (v0.0.5) flash/RAM usage on the nRF51822:
+
+**Flash** (application region, 130,048 bytes after bootloader/SoftDevice)
+- Used: 66,656 bytes
+- Free: ~63.4 KB (48.7%)
+
+**RAM** (21,504 bytes available to the app, after the SoftDevice's fixed 11 KB reservation)
+- Used (static `.data`+`.bss`): 6,352 bytes
+- Free: ~14.8 KB (70.5%) - not counting runtime stack/heap, which live in the same free space
+
 ## Changelog
 
 Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
