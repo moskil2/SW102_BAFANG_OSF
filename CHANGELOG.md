@@ -2,6 +2,16 @@
 
 Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
 
+## 0.0.7 (2026-09-16)
+
+- Added smoothing (exponential moving average, ~8s time constant) to the Precise battery-percentage mode only - throttle-induced voltage sag no longer makes the indicator jump around. Standard mode and the displayed voltage remain fully raw/unfiltered
+
+## 0.0.6 (2026-09-16)
+
+- Fixed ODO (and Trip A) resetting to 0 on every power-off or settings-menu exit: the save path was reading from a legacy field this target never populates, instead of the real value our own code maintains
+- New "Battery percentage" menu option (Battery submenu) with two modes: **Standard** shows the controller's own reported percentage exactly as before; **Precise** computes the percentage locally from the display's own accurately-measured voltage and user-entered Max/Min battery voltage - for controllers whose own reported percentage runs inaccurate
+- Removed/neutralized inherited leftover code found to actively corrupt live telemetry (a fake motor simulator writing garbage into trip calculations, a legacy UART frame parser with a real buffer-overflow risk) plus further confirmed-dead code from the old screen layout
+
 ## 0.0.5 (2026-09-14)
 
 - "Trip reset" moved to the top level of the menu, directly under "Unit"
