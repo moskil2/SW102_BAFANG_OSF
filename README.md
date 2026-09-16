@@ -2,6 +2,8 @@
 
 Open source firmware for the Bafang SW102 display, built for genuine Bafang mid-drive motors. A complete rewrite of the display's firmware - live telemetry, full assist control, lights, and a redesigned cockpit and menu, all running natively on your existing hardware. The end goal: full integration with the **EggSPEED** Android app ([GitHub](https://github.com/moskil2/EggSPEED), [Google Play](https://play.google.com/store/apps/details?id=app.spotrobotics.eggspeed)) over Bluetooth.
 
+[![Watch the demo video](https://img.youtube.com/vi/dRWXJn7uJVk/maxresdefault.jpg)](https://www.youtube.com/watch?v=dRWXJn7uJVk)
+
 | ![Boot screen](screenshots/1.jpeg) | ![Main cockpit screen](screenshots/2.jpeg) | ![Menu, marker icon](screenshots/3.jpeg) | ![Menu, top level](screenshots/4.jpeg) |
 |:---:|:---:|:---:|:---:|
 | 1. Boot screen | 2. Cockpit | 3. Menu (marker) | 4. Menu (top level) |
@@ -161,15 +163,14 @@ The base fork (`anszom/SW102_LCD`, itself a fork of `OpenSourceEBike/Color_LCD`)
 
 ## Resources
 
-Current build (v0.0.5) flash/RAM usage on the nRF51822:
+Current build (v0.0.7) flash/RAM usage on the nRF51822:
 
-**Flash** (application region, 130,048 bytes after bootloader/SoftDevice)
-- Used: 66,656 bytes
-- Free: ~63.4 KB (48.7%)
+| Resource | Budget | Used | Free |
+|---|---|---|---|
+| Flash (application region) | 130,048 B (127.0 KB) | 53,244 B (52.0 KB) | 76,804 B (75.0 KB, 59.1%) |
+| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,104 B (6.0 KB) | 15,400 B (15.0 KB, 71.6%) |
 
-**RAM** (21,504 bytes available to the app, after the SoftDevice's fixed 11 KB reservation)
-- Used (static `.data`+`.bss`): 6,352 bytes
-- Free: ~14.8 KB (70.5%) - not counting runtime stack/heap, which live in the same free space
+RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same free space, not counted separately.
 
 ## Changelog
 
@@ -183,7 +184,7 @@ Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via
 
 - Fixed ODO (and Trip A) resetting to 0 on every power-off or settings-menu exit: the save path was reading from a legacy field this target never populates, instead of the real value our own code maintains
 - New "Battery percentage" menu option (Battery submenu) with two modes: **Standard** shows the controller's own reported percentage exactly as before; **Precise** computes the percentage locally from the display's own accurately-measured voltage and user-entered Max/Min battery voltage - for controllers whose own reported percentage runs inaccurate
-- Removed/neutralized inherited leftover code found to actively corrupt live telemetry (a fake motor simulator writing garbage into trip calculations, a legacy UART frame parser with a real buffer-overflow risk) plus further confirmed-dead code from the old screen layout
+- Removed/neutralized inherited leftover code found to actively corrupt live telemetry (a fake motor simulator writing garbage into trip calculations, a legacy UART frame parser with a real buffer-overflow risk) plus further confirmed-dead code from the old screen layout. Code size dropped from 66,656 to 53,244 bytes flash (~13 KB recovered) as a direct result of this cleanup
 
 ### 0.0.5 (2026-09-14)
 
