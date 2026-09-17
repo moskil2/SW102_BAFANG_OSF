@@ -179,6 +179,25 @@ RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same f
 
 Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
 
+### Unreleased
+
+Dev/emulator-tested only so far, not yet flashed to real hardware or given a version number.
+
+- New complete "ODO" font (`font_odo`) replacing `font_label`/`font_il` in the TRIP/ODO/RANGE/AV/AC rows - full digit/punctuation/uppercase-letter set plus a new ">" arrow glyph, used for the new PAS arrow indicator below. Fixed a real unit-label bug found during the swap: the AV/AC row's unit was showing "Wkm"/"Wml" (missing the "h") instead of the correct "Whkm"/"Whml"
+- New, larger skull-and-crossbones boot screen icon
+- New large digit font (`font_bigspeed`, 30x56px) for the new cockpit layout below
+- New "PAS Type" setting (Cockpit menu): **Type A** is the existing PAS row (centered digit, side bar-graph, status icons above); **Type B** moves the PAS digit to the left with status icons beside it, and shows the assist level as a row of ">" arrows instead of the bar-graph. The bar-graph itself also changed: no more segment for PAS level 0, left side now shows 5 segments (levels 1-5) and right side 4 (levels 6-9)
+- "PAS bar" setting renamed to "PAS Icons" - now also controls the Type B arrow row (previously only the Type A bar-graph)
+- New "PAS Negativ" setting (Cockpit menu): draws the PAS digit as a cut-out inside a filled rectangle instead of normal ink, in both Type A and Type B
+- New second cockpit layout, toggled by a short press of the M button: merges the speed and power rows into one, showing only the whole-number speed as two large digits (no fraction, no unit, no power value) - the choice persists across power cycles
+- Settings menu visual overhaul: entries are now left-justified (previously centered for context rows), the selection marker moved to the screen edge, and a too-long selected entry now scrolls further left before disappearing
+- Safety fix: assist level now always resets to 0 on power-on, instead of restoring the last-used level from flash
+- Fixed RANGE showing near-zero while the battery percentage display showed a healthy value: the range estimator was using the controller's own raw (often inaccurate) reported percentage instead of whichever percentage is actually shown on screen (Standard or Precise)
+
+### 0.0.8 (2026-09-16)
+
+- Fixed a DFU (BLE OTA) update failure that could leave the device stuck in the bootloader when updating to a build smaller than the one already installed (a full SWD reflash of the identical image booted fine, isolating the fault to the DFU path specifically). The application image is now padded with 0xFF up to a fixed 80KB footprint before packaging for OTA, so every update occupies the same flash region regardless of its actual size - only the OTA package is affected, the SWD image is unchanged
+
 ### 0.0.7 (2026-09-16)
 
 - Added smoothing (exponential moving average, ~8s time constant) to the Precise battery-percentage mode only - throttle-induced voltage sag no longer makes the indicator jump around. Standard mode and the displayed voltage remain fully raw/unfiltered
