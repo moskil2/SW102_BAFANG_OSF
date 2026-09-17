@@ -26,11 +26,14 @@ Tested on real hardware with a BBSHD controller.
 - Top bar: battery voltage (left) and battery percentage (right)
 - Speed: large digits with one decimal, unit label (km/h or mph)
 - Power: motor power in watts
-- Assist level: number flanked by a 10-segment bar-graph indicator, status icons above it (headlight, Bluetooth connection, brake), replaced by an animated walk-assist icon while walk assist is held
+- Assist level: two selectable layouts (Type A/B, see Menu below) - a centered number with a 10-segment bar-graph indicator, or the number to one side with the level shown as a row of arrows; status icons (headlight, Bluetooth connection, brake) either way, replaced by an animated walk-assist icon while walk assist is held
 - Trip distance, Odometer, and estimated Range rows
 - Average / current energy consumption row (Wh/km or Wh/mile)
 - Optional separator lines between rows (toggle in menu)
-- Controls: UP/DOWN short press = assist level up/down; UP long press = toggle headlight; DOWN long press (hold) = walk assist; M long press = open menu
+- Second layout for the speed/power area (toggle with a short press of M): merges both rows into one large whole-number speed readout
+- Controls: UP/DOWN short press = assist level up/down; UP long press = toggle headlight; DOWN long press (hold) = walk assist; M short press = toggle cockpit layout; M long press = open menu
+
+*The assist-level layout toggle, arrow-style indicator, and the merged speed/power layout are new and dev/emulator-tested only so far - not yet verified on real hardware, see Changelog's "Unreleased" section.*
 
 ## Menu
 
@@ -43,7 +46,7 @@ Tested on real hardware with a BBSHD controller.
 - ODO (manually set or correct the odometer)
 - Battery submenu: pack capacity (Wh)
 - Brightness submenu: manual or automatic mode, adjustable level
-- Cockpit submenu: toggle separators, toggle the PAS bar
+- Cockpit submenu: toggle separators, toggle the assist-level indicator ("PAS Icons"), choose the assist-level layout ("PAS Type": Type A/B), toggle a negative/cut-out style for the assist-level digit ("PAS Negativ")
 - Screen test (fills the display white for a dead-pixel check)
 - Info submenu: firmware version, hardware, developer credit, website
 - Reset submenu: full factory reset, trip-only reset
