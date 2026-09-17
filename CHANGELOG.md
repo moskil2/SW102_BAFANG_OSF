@@ -2,9 +2,7 @@
 
 Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
 
-## Unreleased
-
-Dev/emulator-tested only so far, not yet flashed to real hardware or given a version number.
+## 0.0.9 (2026-09-17)
 
 - New complete "ODO" font (`font_odo`) replacing `font_label`/`font_il` in the TRIP/ODO/RANGE/AV/AC rows - full digit/punctuation/uppercase-letter set plus a new ">" arrow glyph, used for the new PAS arrow indicator below. Fixed a real unit-label bug found during the swap: the AV/AC row's unit was showing "Wkm"/"Wml" (missing the "h") instead of the correct "Whkm"/"Whml"
 - New, larger skull-and-crossbones boot screen icon
