@@ -34,7 +34,7 @@ Tested on real hardware with a BBSHD controller.
 - Trip distance, Odometer, and estimated Range rows
 - Average / current energy consumption row (Wh/km or Wh/mile)
 - Optional separator lines between rows (toggle in menu)
-- Three cockpit layouts, cycled with a short press of M: the standard layout above, a second one that merges the speed and power rows into one large whole-number speed readout, and a third "data screen" listing trip distance, average and top speed, total and moving time, maximum current and power, average consumption (Wh/km) and energy used (Wh). The total-time, maximum-current and maximum-power values start from zero after every power-on
+- Three cockpit layouts, cycled with a short press of M: the standard layout above, a second one that merges the speed and power rows into one large whole-number speed readout, and a third "data screen" listing trip distance, average and top speed, total and moving time, maximum current and power, average consumption (Wh/km) and energy used (Wh). All of these values are remembered across power-off, like TRIP, and cleared only by "Trip reset" (consumption is the average over the trip: energy used divided by trip distance)
 - Controls: UP/DOWN short press = assist level up/down; UP long press = toggle headlight; DOWN long press (hold) = walk assist; M short press = cycle cockpit layout; M long press = open menu
 
 ## Menu
@@ -48,7 +48,7 @@ Tested on real hardware with a BBSHD controller.
 - ODO (manually set or correct the odometer)
 - Battery submenu: pack capacity (Wh)
 - Brightness submenu: manual or automatic mode, adjustable level
-- Cockpit submenu: toggle separators, toggle the assist-level indicator ("PAS Icons"), choose the assist-level layout ("PAS Type": Type A/B), toggle a negative/cut-out style for the assist-level digit ("PAS Negativ"), turn the whole display upside down ("Rotate Screen 180deg" - UP/DOWN are swapped to match; not remembered after power-off)
+- Cockpit submenu: toggle separators, toggle the assist-level indicator ("PAS Icons"), choose the assist-level layout ("PAS Type": Type A/B), toggle a negative/cut-out style for the assist-level digit ("PAS Negativ"), turn the whole display upside down ("Rotate Screen 180deg" - UP/DOWN are swapped to match; remembered after power-off)
 - Screen test (fills the display white for a dead-pixel check)
 - Bafang Assist Level Programming: read the controller's per-assist-level (PAS 0-9) current and speed limits, edit them and save them back to the controller
 - Info submenu: firmware version, hardware, developer credit, website
@@ -169,18 +169,25 @@ The base fork (`anszom/SW102_LCD`, itself a fork of `OpenSourceEBike/Color_LCD`)
 
 ## Resources
 
-Current build (v0.1.2) flash/RAM usage on the nRF51822:
+Current build (v0.1.3) flash/RAM usage on the nRF51822:
 
 | Resource | Budget | Used | Free |
 |---|---|---|---|
-| Flash (application region) | 130,048 B (127.0 KB) | 59,336 B (57.9 KB) | 70,712 B (69.1 KB, 54.4%) |
-| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,228 B (6.1 KB) | 15,276 B (14.9 KB, 71.0%) |
+| Flash (application region) | 130,048 B (127.0 KB) | 59,748 B (58.3 KB) | 70,300 B (68.7 KB, 54.1%) |
+| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,248 B (6.1 KB) | 15,256 B (14.9 KB, 70.9%) |
 
 RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same free space, not counted separately.
 
 ## Changelog
 
 Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
+
+### 0.1.3 (2026-09-19)
+
+- Data screen values are now remembered across power-off, like TRIP, and cleared only by "Trip reset": total time, maximum current, maximum power and energy used. Total time can no longer be smaller than moving time (on the first start after the update it begins from the already-saved moving time)
+- The data screen's CONS is now the average consumption over the TRIP shown on the same screen (energy used divided by trip distance), so the two always agree. The AV/AC row on the other two cockpit layouts is unchanged
+- "Rotate Screen 180deg" is now remembered after power-off
+- PAS Type A: the negative frame is 1px wider on the right and the four bars right of the number moved 1px right; the walk-assist figure moved 1px right in both types; "AC" and its value in the AV/AC row moved 1px right
 
 ### 0.1.2 (2026-09-19)
 
