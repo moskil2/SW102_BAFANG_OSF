@@ -2,7 +2,7 @@
 
 Open source firmware for the Bafang SW102 display, built for genuine Bafang mid-drive motors. A complete rewrite of the display's firmware - live telemetry, full assist control, lights, and a redesigned cockpit and menu, all running natively on your existing hardware. The end goal: full integration with the **EggSPEED** Android app ([GitHub](https://github.com/moskil2/EggSPEED), [Google Play](https://play.google.com/store/apps/details?id=app.spotrobotics.eggspeed)) over Bluetooth.
 
-[![Watch the demo video](https://img.youtube.com/vi/dRWXJn7uJVk/maxresdefault.jpg)](https://www.youtube.com/watch?v=dRWXJn7uJVk)
+[![Watch the demo video](https://img.youtube.com/vi/YrcN-K4wGN4/maxresdefault.jpg)](https://www.youtube.com/watch?v=YrcN-K4wGN4)
 
 | <img src="screenshots/boot.jpg" height="300" alt="Boot screen"> | <img src="screenshots/cockpit_a.jpg" height="300" alt="Main cockpit screen"> | <img src="screenshots/cockpit_big.jpg" height="300" alt="Cockpit, large speed"> | <img src="screenshots/data_screen.jpg" height="300" alt="Data screen"> |
 |:---:|:---:|:---:|:---:|
