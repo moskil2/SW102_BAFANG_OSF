@@ -4,9 +4,13 @@ Open source firmware for the Bafang SW102 display, built for genuine Bafang mid-
 
 [![Watch the demo video](https://img.youtube.com/vi/dRWXJn7uJVk/maxresdefault.jpg)](https://www.youtube.com/watch?v=dRWXJn7uJVk)
 
-| ![Boot screen](screenshots/1.jpeg) | ![Main cockpit screen](screenshots/2.jpeg) | ![Menu, marker icon](screenshots/3.jpeg) | ![Menu, top level](screenshots/4.jpeg) |
+| ![Boot screen](screenshots/boot.jpg) | ![Main cockpit screen](screenshots/cockpit_a.jpg) | ![Data screen](screenshots/data_screen.jpg) | ![Menu, top level](screenshots/menu_top.jpg) |
 |:---:|:---:|:---:|:---:|
-| 1. Boot screen | 2. Cockpit | 3. Menu (marker) | 4. Menu (top level) |
+| Boot screen | Cockpit (layout 1) | Data screen (layout 3) | Menu (top level) |
+
+| ![Cockpit, large speed](screenshots/cockpit_big.jpg) | ![Cockpit, PAS Type B](screenshots/cockpit_pas_b.jpg) | ![Screen rotated 180 degrees](screenshots/rotated.jpg) | ![Cockpit menu](screenshots/menu_cockpit.jpg) | ![Assist Level Programming](screenshots/pas_programming.jpg) |
+|:---:|:---:|:---:|:---:|:---:|
+| Cockpit (layout 2) | PAS Type B | Rotated 180 degrees | Cockpit menu | Assist Level Programming |
 
 ## Compatibility
 
@@ -30,8 +34,8 @@ Tested on real hardware with a BBSHD controller.
 - Trip distance, Odometer, and estimated Range rows
 - Average / current energy consumption row (Wh/km or Wh/mile)
 - Optional separator lines between rows (toggle in menu)
-- Second layout for the speed/power area (toggle with a short press of M): merges both rows into one large whole-number speed readout
-- Controls: UP/DOWN short press = assist level up/down; UP long press = toggle headlight; DOWN long press (hold) = walk assist; M short press = toggle cockpit layout; M long press = open menu
+- Three cockpit layouts, cycled with a short press of M: the standard layout above, a second one that merges the speed and power rows into one large whole-number speed readout, and a third "data screen" listing trip distance, average and top speed, total and moving time, maximum current and power, average consumption (Wh/km) and energy used (Wh). The total-time, maximum-current and maximum-power values start from zero after every power-on
+- Controls: UP/DOWN short press = assist level up/down; UP long press = toggle headlight; DOWN long press (hold) = walk assist; M short press = cycle cockpit layout; M long press = open menu
 
 ## Menu
 
@@ -44,8 +48,9 @@ Tested on real hardware with a BBSHD controller.
 - ODO (manually set or correct the odometer)
 - Battery submenu: pack capacity (Wh)
 - Brightness submenu: manual or automatic mode, adjustable level
-- Cockpit submenu: toggle separators, toggle the assist-level indicator ("PAS Icons"), choose the assist-level layout ("PAS Type": Type A/B), toggle a negative/cut-out style for the assist-level digit ("PAS Negativ")
+- Cockpit submenu: toggle separators, toggle the assist-level indicator ("PAS Icons"), choose the assist-level layout ("PAS Type": Type A/B), toggle a negative/cut-out style for the assist-level digit ("PAS Negativ"), turn the whole display upside down ("Rotate Screen 180deg" - UP/DOWN are swapped to match; not remembered after power-off)
 - Screen test (fills the display white for a dead-pixel check)
+- Bafang Assist Level Programming: read the controller's per-assist-level (PAS 0-9) current and speed limits, edit them and save them back to the controller
 - Info submenu: firmware version, hardware, developer credit, website
 - Reset submenu: full factory reset, trip-only reset
 - Battery percentage mode: Standard (shows the controller's own reported percentage as-is) or Precise (computes percentage locally from the display's accurately-measured voltage and user-entered max/min battery voltage, smoothed to avoid jumps under load) - for controllers whose own percentage reporting runs low
@@ -164,18 +169,39 @@ The base fork (`anszom/SW102_LCD`, itself a fork of `OpenSourceEBike/Color_LCD`)
 
 ## Resources
 
-Current build (v0.0.7) flash/RAM usage on the nRF51822:
+Current build (v0.1.2) flash/RAM usage on the nRF51822:
 
 | Resource | Budget | Used | Free |
 |---|---|---|---|
-| Flash (application region) | 130,048 B (127.0 KB) | 53,244 B (52.0 KB) | 76,804 B (75.0 KB, 59.1%) |
-| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,104 B (6.0 KB) | 15,400 B (15.0 KB, 71.6%) |
+| Flash (application region) | 130,048 B (127.0 KB) | 59,336 B (57.9 KB) | 70,712 B (69.1 KB, 54.4%) |
+| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,228 B (6.1 KB) | 15,276 B (14.9 KB, 71.0%) |
 
 RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same free space, not counted separately.
 
 ## Changelog
 
 Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
+
+### 0.1.2 (2026-09-19)
+
+- Third cockpit layout: a plain data list (label on the left, value and unit on the right) with trip distance, average speed, top speed, total time, moving time, maximum current, maximum power, average consumption (Wh/km) and energy used (Wh). A short press of M now cycles through all three layouts
+- New "Rotate Screen 180deg" option (Cockpit menu): turns the whole display upside down, with UP and DOWN swapped to match. Deliberately not remembered - after a power cycle the display always starts in the normal orientation
+- The walking-person animation now also shows in PAS Type B while walk assist is held (previously only Type A did)
+
+
+### 0.1.1 (2026-09-18)
+
+- Fixed "Save failed" being shown for every save in the Assist Level Programming screen even though the data had been written: the controller confirms a write with its own short acknowledgement message, which the firmware did not expect. The save result is now based on that acknowledgement
+
+
+### 0.1.0 (2026-09-18)
+
+- New "Bafang Assist Level Programming" screen (main menu, between "Screen test" and "Info"): reads the controller's own per-assist-level (PAS 0-9) current and speed limits in percent, lets you edit them and writes them back to the controller with SAVE. It reads automatically on entry; editing and SAVE stay locked until a read has succeeded, so nothing empty is ever sent. A blinking underline shows a read or save in progress, and the result is shown as a notice
+- "Trip reset" now asks for confirmation (opens a "Confirm trip reset" step, like "Factory reset") so it cannot be triggered by accident
+- Fixed the menu selection marker sitting 1px too low in every menu
+- Boot screen: back to the smaller skull icon
+- Fixes from real-hardware testing: the PAS negative frame is 1px wider on the left, the PAS digit in Type A moved 1px, and the AV/AC row uses fixed positions so "AC" no longer drifts with the number of digits in AV
+
 
 ### 0.0.9 (2026-09-17)
 
