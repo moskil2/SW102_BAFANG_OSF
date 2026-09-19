@@ -4,13 +4,13 @@ Open source firmware for the Bafang SW102 display, built for genuine Bafang mid-
 
 [![Watch the demo video](https://img.youtube.com/vi/dRWXJn7uJVk/maxresdefault.jpg)](https://www.youtube.com/watch?v=dRWXJn7uJVk)
 
-| ![Boot screen](screenshots/boot.jpg) | ![Main cockpit screen](screenshots/cockpit_a.jpg) | ![Data screen](screenshots/data_screen.jpg) | ![Menu, top level](screenshots/menu_top.jpg) |
+| <img src="screenshots/boot.jpg" height="300" alt="Boot screen"> | <img src="screenshots/cockpit_a.jpg" height="300" alt="Main cockpit screen"> | <img src="screenshots/cockpit_big.jpg" height="300" alt="Cockpit, large speed"> | <img src="screenshots/data_screen.jpg" height="300" alt="Data screen"> |
 |:---:|:---:|:---:|:---:|
-| Boot screen | Cockpit (layout 1) | Data screen (layout 3) | Menu (top level) |
+| Boot screen | Cockpit (layout 1) | Cockpit (layout 2) | Data screen (layout 3) |
 
-| ![Cockpit, large speed](screenshots/cockpit_big.jpg) | ![Cockpit, PAS Type B](screenshots/cockpit_pas_b.jpg) | ![Screen rotated 180 degrees](screenshots/rotated.jpg) | ![Cockpit menu](screenshots/menu_cockpit.jpg) | ![Assist Level Programming](screenshots/pas_programming.jpg) |
-|:---:|:---:|:---:|:---:|:---:|
-| Cockpit (layout 2) | PAS Type B | Rotated 180 degrees | Cockpit menu | Assist Level Programming |
+| <img src="screenshots/cockpit_pas_b.jpg" height="300" alt="Cockpit, PAS Type B"> | <img src="screenshots/rotated.jpg" height="300" alt="Screen rotated 180 degrees"> | <img src="screenshots/menu_top.jpg" height="300" alt="Menu, top level"> | <img src="screenshots/pas_programming.jpg" height="300" alt="Assist Level Programming"> |
+|:---:|:---:|:---:|:---:|
+| PAS Type B | Rotated 180 degrees | Menu (top level) | Assist Level Programming |
 
 ## Compatibility
 
