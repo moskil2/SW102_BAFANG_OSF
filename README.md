@@ -182,12 +182,12 @@ Once the bootloader is installed (first flash via ST-Link), later firmware updat
 <tr>
 <td>
 
-<img src="font_speed_work/cockpit_simulation_natural.png" alt="SW102 cockpit simulation - speed, power, assist level, trip/odo/range" width="260">
+<img src="font_speed_work/cockpit_simulation_natural.png" alt="SW102 cockpit simulation - speed, power, assist level, trip/odo/range" height="400">
 
 </td>
 <td>
 
-<img src="screenshots/emulator.png" alt="SW102 emu-rs terminal emulator running the real firmware" width="260">
+<img src="screenshots/emulator.png" alt="SW102 emu-rs terminal emulator running the real firmware" height="400">
 
 </td>
 </tr>
