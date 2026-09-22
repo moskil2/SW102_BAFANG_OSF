@@ -103,6 +103,26 @@ Open the SW102 display to expose the 4 programming pads: **GND, CLK (SWCLK), DIO
 
 You can power the display straight from the ST-Link's 3.3V pin for flashing - no battery or controller cable needed.
 
+#### HOW TO OPEN SW102
+
+The most reliable way to reach the four pads is to gently drill four small holes, side by side, with a 3mm bit, then solder onto the pads as shown below.
+
+I don't recommend prying the button panel open instead - it's glued firmly, and prying it apart usually damages components inside, after which the display is generally no longer usable.
+
+<table>
+<tr>
+<td align="center"><img src="screenshots/open_1a.jpg" width="200"></td>
+<td align="center"><img src="screenshots/open_1b.jpg" width="200"></td>
+<td align="center"><img src="screenshots/open_2.jpg" width="200"></td>
+<td align="center"><img src="screenshots/open_3.jpg" width="200"></td>
+</tr>
+<tr>
+<td align="center"><img src="screenshots/open_4.jpg" width="200"></td>
+<td align="center"><img src="screenshots/open_5.jpg" width="200"></td>
+<td align="center"><img src="screenshots/open_6.jpg" width="200"></td>
+</tr>
+</table>
+
 ### 3. Flash the firmware
 
 1. Open a Command Prompt (press the Windows key, type `cmd`, press Enter).
