@@ -178,8 +178,20 @@ Once the bootloader is installed (first flash via ST-Link), later firmware updat
 
 ## Preview (simulation)
 
+<table>
+<tr>
+<td>
+
 <img src="font_speed_work/cockpit_simulation_natural.png" alt="SW102 cockpit simulation - speed, power, assist level, trip/odo/range" width="260">
+
+</td>
+<td>
+
 <img src="screenshots/emulator.png" alt="SW102 emu-rs terminal emulator running the real firmware" width="260">
+
+</td>
+</tr>
+</table>
 
 Pixel-accurate cockpit layout simulation (`font_speed_work/simulate_cockpit.py`) using the
 hand-drawn fonts, used to iterate on the UI before touching C code.
