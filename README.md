@@ -77,6 +77,8 @@ Plugging the ST-Link into USB alone is not enough - Windows needs the driver, or
 2. Open the unzipped folder, find `stlink_winusb_install.bat`, right-click it, and choose **"Run as administrator"** from the menu.
 3. Unplug and replug the ST-Link.
 
+<img src="screenshots/stlink.jpg" width="300" alt="ST-Link V2 dongle with pinout labels and connected wires">
+
 ### 2. Open the case and connect the SWD pins
 
 Open the SW102 display to expose the 4 programming pads: **GND, CLK (SWCLK), DIO (SWDIO), 3V3**.
