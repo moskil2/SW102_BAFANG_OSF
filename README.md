@@ -109,7 +109,9 @@ You can power the display straight from the ST-Link's 3.3V pin for flashing - no
 
 The most reliable way to reach the four pads is to gently drill four small holes, side by side, with a 3mm bit, then solder onto the pads as shown below.
 
-I don't recommend prying the button panel open instead - it's glued firmly, and prying it apart usually damages components inside, after which the display is generally no longer usable.
+I don't recommend opening the button panel by force instead - it's glued firmly, and forcing it open usually damages the case enough that it can no longer be glued back together to keep it waterproof. Sealing the small drilled hole afterward with a dab of silicone, on the other hand, is easy.
+
+The blue tape in the photos is just there so the drill doesn't accidentally scratch the display.
 
 <table>
 <tr>
