@@ -159,6 +159,8 @@ Disconnect the ST-Link, connect normal power (battery or the controller cable), 
 
 Once the bootloader is installed (first flash via ST-Link), later firmware updates can be done wirelessly - no need to open the case again.
 
+[![Watch the Bluetooth update video](https://img.youtube.com/vi/GyanRPCOuG8/maxresdefault.jpg)](https://www.youtube.com/watch?v=GyanRPCOuG8)
+
 ### What you need
 
 - The **nRF Connect** app (Android/iOS, by Nordic Semiconductor)
