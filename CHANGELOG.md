@@ -8,7 +8,7 @@ Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via
 - TRIP on cockpit layouts 1 and 2 now shows one decimal digit (e.g. 12,3 km)
 - On the data screen (layout 3), changing the assist level now blanks the screen and shows the new level big in the middle with "PAS" underneath for 3 seconds (a further change swaps the digit at once and restarts the 3 seconds) - the data screen shows no assist level itself, so a change was invisible
 - Brightness menu: "Level" is no longer listed in AUTO mode (it only applies in MANUAL); in MANUAL the level now previews live while you scroll through it (cancelling restores the previous one); switching back to AUTO applies the light-dependent brightness at once
-- More accurate battery voltage measurement (0.1 V steps instead of about 0.26 V, and no more systematic under-reading of up to 0.26 V) - this also makes the Precise battery percentage follow the real voltage more closely. After updating, compare the shown voltage with a multimeter and adjust "Voltage cal." if needed
+- More accurate battery voltage measurement (0.1 V steps instead of about 0.26 V, and no more systematic under-reading of up to 0.26 V) - this also makes the Precise battery percentage follow the real voltage more closely
 
 ## 0.1.3 (2026-09-19)
 
