@@ -31,7 +31,7 @@ Tested on real hardware with a BBSHD controller.
 - Speed: large digits with one decimal, unit label (km/h or mph)
 - Power: motor power in watts
 - Assist level: two selectable layouts (Type A/B, see Menu below) - a centered number with a 10-segment bar-graph indicator, or the number to one side with the level shown as a row of arrows; status icons (headlight, Bluetooth connection, brake) either way, replaced by an animated walk-assist icon while walk assist is held
-- Trip distance, Odometer, and estimated Range rows
+- Trip distance (with one decimal), Odometer, and estimated Range rows
 - Average / current energy consumption row (Wh/km or Wh/mile)
 - Optional separator lines between rows (toggle in menu)
 - Three cockpit layouts, cycled with a short press of M: the standard layout above, a second one that merges the speed and power rows into one large whole-number speed readout, and a third "data screen" listing trip distance, average and top speed, total and moving time, maximum current and power, average consumption (Wh/km) and energy used (Wh). All of these values are remembered across power-off, like TRIP, and cleared only by "Trip reset" (consumption is the average over the trip: energy used divided by trip distance)
@@ -47,7 +47,7 @@ Tested on real hardware with a BBSHD controller.
 - Voltage calibration (adjustable display multiplier)
 - ODO (manually set or correct the odometer)
 - Battery submenu: pack capacity (Wh)
-- Brightness submenu: manual or automatic mode, adjustable level
+- Brightness submenu: manual or automatic mode; in manual mode an adjustable level with live preview (the level entry is only listed in manual mode)
 - Cockpit submenu: toggle separators, toggle the assist-level indicator ("PAS Icons"), choose the assist-level layout ("PAS Type": Type A/B), toggle a negative/cut-out style for the assist-level digit ("PAS Negativ"), turn the whole display upside down ("Rotate Screen 180deg" - UP/DOWN are swapped to match; remembered after power-off)
 - Screen test (fills the display white for a dead-pixel check)
 - Bafang Assist Level Programming: read the controller's per-assist-level (PAS 0-9) current and speed limits, edit them and save them back to the controller
@@ -206,18 +206,26 @@ The base fork (`anszom/SW102_LCD`, itself a fork of `OpenSourceEBike/Color_LCD`)
 
 ## Resources
 
-Current build (v0.1.3) flash/RAM usage on the nRF51822:
+Current build (v0.1.4) flash/RAM usage on the nRF51822:
 
 | Resource | Budget | Used | Free |
 |---|---|---|---|
-| Flash (application region) | 130,048 B (127.0 KB) | 59,748 B (58.3 KB) | 70,300 B (68.7 KB, 54.1%) |
-| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,248 B (6.1 KB) | 15,256 B (14.9 KB, 70.9%) |
+| Flash (application region) | 130,048 B (127.0 KB) | 60,212 B (58.8 KB) | 69,836 B (68.2 KB, 53.7%) |
+| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,272 B (6.1 KB) | 15,232 B (14.9 KB, 70.8%) |
 
 RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same free space, not counted separately.
 
 ## Changelog
 
 Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
+
+### 0.1.4 (2026-09-25)
+
+- Fixed the TRIP distance: it was rounded to a whole meter on every 100 ms step, so anything below 18 km/h added nothing at all and 18-54 km/h always added exactly 1 m per step (a 7 km ride, mostly unassisted at low speed, showed as 2 km). It is now exact at any speed. The data screen's AVG and CONS, which are derived from it, are corrected too. ODO, the AV/AC rows and range were not affected. A TRIP counted with the old firmware stays wrong until the next "Trip reset"
+- TRIP on cockpit layouts 1 and 2 now shows one decimal digit (e.g. 12,3 km)
+- On the data screen (layout 3), changing the assist level now blanks the screen and shows the new level big in the middle with "PAS" underneath for 3 seconds (a further change swaps the digit at once and restarts the 3 seconds) - the data screen shows no assist level itself, so a change was invisible
+- Brightness menu: "Level" is no longer listed in AUTO mode (it only applies in MANUAL); in MANUAL the level now previews live while you scroll through it (cancelling restores the previous one); switching back to AUTO applies the light-dependent brightness at once
+- More accurate battery voltage measurement (0.1 V steps instead of about 0.26 V, and no more systematic under-reading of up to 0.26 V) - this also makes the Precise battery percentage follow the real voltage more closely. After updating, compare the shown voltage with a multimeter and adjust "Voltage cal." if needed
 
 ### 0.1.3 (2026-09-19)
 
