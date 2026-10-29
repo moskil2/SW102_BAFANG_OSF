@@ -2,6 +2,16 @@
 
 Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
 
+## 0.1.5 (2026-10-29)
+
+- New STREET/RACE assist profiles, with the same naming and behaviour as in the EggSPEED app (prepared for a later Bluetooth link between the two): a second, independent per-level table (current % and speed % for PAS 0-9) kept on the display and loaded onto the controller on demand
+- Assist Level Programming screen: a new "STREET/RACE" row under PAS 9 opens "USE RACE" YES/NO. The first time it is turned on, RACE starts as a copy of the controller's current (STREET) table. With USE RACE on, a RACE section follows (double line, "RACE" title, "SAVE RACE", PAS 0-9). SAVE RACE stores the RACE table on the display only - it reaches the controller only when you switch to RACE
+- Switching on the cockpit: hold UP and DOWN together for 3 seconds. The assist level goes to 0 (and stays there), the display reads the controller's current settings, swaps in only the per-level table, writes it and checks the controller's confirmation, with one retry. Afterwards "RACE MOD ACTIVE" / "STREET MOD ACTIVE" shows for 3 seconds, or "Write error" if it failed. While both buttons are held they do nothing else (no light toggle, no walk assist, no assist level change)
+- While RACE is active, both tables are view-only ("BEFORE EDIT SWITCH TO STREET"), and USE RACE cannot be turned off ("SWITCH TO STREET FIRST")
+- With USE RACE on, the top bar of cockpit layouts 1 and 2 shows the active profile, "S" or "R", between the voltage and the battery percentage
+- The STREET/RACE state is saved to flash at once on every change, in its own record, so it survives pulling the battery; no other saved setting is touched by this update
+- Before a firmware update with STREET/RACE in use, switch to STREET (see "Updating (Bluetooth)" in the README)
+
 ## 0.1.4 (2026-09-25)
 
 - Fixed the TRIP distance: it was rounded to a whole meter on every 100 ms step, so anything below 18 km/h added nothing at all and 18-54 km/h always added exactly 1 m per step (a 7 km ride, mostly unassisted at low speed, showed as 2 km). It is now exact at any speed. The data screen's AVG and CONS, which are derived from it, are corrected too. ODO, the AV/AC rows and range were not affected. A TRIP counted with the old firmware stays wrong until the next "Trip reset"

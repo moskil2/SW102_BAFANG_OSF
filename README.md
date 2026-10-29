@@ -27,7 +27,7 @@ Tested on real hardware with a BBSHD controller.
 
 ## Cockpit (main screen)
 
-- Top bar: battery voltage (left) and battery percentage (right)
+- Top bar: battery voltage (left) and battery percentage (right); with STREET/RACE turned on, the active profile ("S" or "R") in between
 - Speed: large digits with one decimal, unit label (km/h or mph)
 - Power: motor power in watts
 - Assist level: two selectable layouts (Type A/B, see Menu below) - a centered number with a 10-segment bar-graph indicator, or the number to one side with the level shown as a row of arrows; status icons (headlight, Bluetooth connection, brake) either way, replaced by an animated walk-assist icon while walk assist is held
@@ -35,7 +35,7 @@ Tested on real hardware with a BBSHD controller.
 - Average / current energy consumption row (Wh/km or Wh/mile)
 - Optional separator lines between rows (toggle in menu)
 - Three cockpit layouts, cycled with a short press of M: the standard layout above, a second one that merges the speed and power rows into one large whole-number speed readout, and a third "data screen" listing trip distance, average and top speed, total and moving time, maximum current and power, average consumption (Wh/km) and energy used (Wh). All of these values are remembered across power-off, like TRIP, and cleared only by "Trip reset" (consumption is the average over the trip: energy used divided by trip distance)
-- Controls: UP/DOWN short press = assist level up/down; UP long press = toggle headlight; DOWN long press (hold) = walk assist; M short press = cycle cockpit layout; M long press = open menu
+- Controls: UP/DOWN short press = assist level up/down; UP long press = toggle headlight; DOWN long press (hold) = walk assist; M short press = cycle cockpit layout; M long press = open menu; UP + DOWN held together for 3 seconds = switch STREET/RACE (when turned on)
 
 ## Menu
 
@@ -50,7 +50,7 @@ Tested on real hardware with a BBSHD controller.
 - Brightness submenu: manual or automatic mode; in manual mode an adjustable level with live preview (the level entry is only listed in manual mode)
 - Cockpit submenu: toggle separators, toggle the assist-level indicator ("PAS Icons"), choose the assist-level layout ("PAS Type": Type A/B), toggle a negative/cut-out style for the assist-level digit ("PAS Negativ"), turn the whole display upside down ("Rotate Screen 180deg" - UP/DOWN are swapped to match; remembered after power-off)
 - Screen test (fills the display white for a dead-pixel check)
-- Bafang Assist Level Programming: read the controller's per-assist-level (PAS 0-9) current and speed limits, edit them and save them back to the controller
+- Bafang Assist Level Programming: read the controller's per-assist-level (PAS 0-9) current and speed limits, edit them and save them back to the controller. Also holds the STREET/RACE option ("USE RACE"): a second, independent RACE table kept on the display and loaded onto the controller only when you switch to RACE on the cockpit
 - Info submenu: firmware version, hardware, developer credit, website
 - Reset submenu: full factory reset, trip-only reset
 - Battery percentage mode: Standard (shows the controller's own reported percentage as-is) or Precise (computes percentage locally from the display's accurately-measured voltage and user-entered max/min battery voltage, smoothed to avoid jumps under load) - for controllers whose own percentage reporting runs low
@@ -166,6 +166,10 @@ Once the bootloader is installed (first flash via ST-Link), later firmware updat
 - The **nRF Connect** app (Android/iOS, by Nordic Semiconductor)
 - The firmware update package, e.g. `SW102_BAF_FW_X.Y.Z.zip`, transferred to your phone
 
+### Before updating
+
+If you use STREET/RACE, switch to STREET first. A Bluetooth update is meant to keep the saved settings, but a full ST-Link flash erases them. If RACE were active at that point, the controller would keep the RACE table and the STREET table, stored only on the display, would be lost. With STREET active nothing important can be lost: at worst the RACE table, which starts again as a copy of STREET when you turn USE RACE back on.
+
 ### Steps
 
 1. With the display powered on, hold **M + PWR together for at least 8 seconds**, until the screen goes dark - this confirms it's now in bootloader DFU mode.
@@ -220,6 +224,16 @@ RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same f
 ## Changelog
 
 Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
+
+### 0.1.5 (2026-10-29)
+
+- New STREET/RACE assist profiles, with the same naming and behaviour as in the EggSPEED app (prepared for a later Bluetooth link between the two): a second, independent per-level table (current % and speed % for PAS 0-9) kept on the display and loaded onto the controller on demand
+- Assist Level Programming screen: a new "STREET/RACE" row under PAS 9 opens "USE RACE" YES/NO. The first time it is turned on, RACE starts as a copy of the controller's current (STREET) table. With USE RACE on, a RACE section follows (double line, "RACE" title, "SAVE RACE", PAS 0-9). SAVE RACE stores the RACE table on the display only - it reaches the controller only when you switch to RACE
+- Switching on the cockpit: hold UP and DOWN together for 3 seconds. The assist level goes to 0 (and stays there), the display reads the controller's current settings, swaps in only the per-level table, writes it and checks the controller's confirmation, with one retry. Afterwards "RACE MOD ACTIVE" / "STREET MOD ACTIVE" shows for 3 seconds, or "Write error" if it failed. While both buttons are held they do nothing else (no light toggle, no walk assist, no assist level change)
+- While RACE is active, both tables are view-only ("BEFORE EDIT SWITCH TO STREET"), and USE RACE cannot be turned off ("SWITCH TO STREET FIRST")
+- With USE RACE on, the top bar of cockpit layouts 1 and 2 shows the active profile, "S" or "R", between the voltage and the battery percentage
+- The STREET/RACE state is saved to flash at once on every change, in its own record, so it survives pulling the battery; no other saved setting is touched by this update
+- Before a firmware update with STREET/RACE in use, switch to STREET (see "Updating (Bluetooth)")
 
 ### 0.1.4 (2026-09-25)
 
