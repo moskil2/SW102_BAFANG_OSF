@@ -103,6 +103,10 @@ Open the SW102 display to expose the 4 programming pads: **GND, CLK (SWCLK), DIO
 </tr>
 </table>
 
+#### HOW TO CONNECT
+
+<img src="screenshots/stlink_connect.png" width="100%" alt="ST-Link V2 wiring to the SW102 pads: SWDIO to DIO, GND to GND, SWCLK to CLK, 3.3V to 3V">
+
 You can power the display straight from the ST-Link's 3.3V pin for flashing - no battery or controller cable needed.
 
 #### HOW TO OPEN SW102
