@@ -8,7 +8,7 @@ This is the simple, end-user version of the flashing procedure - tested on real 
 - A Windows PC
 - **OpenOCD** - download the Windows build from the [xPack OpenOCD releases page](https://github.com/xpack-dev-tools/openocd-xpack/releases) (the `...win32-x64.zip` asset) and unzip it anywhere, e.g. `C:\OpenOCD`
 - The **ST-Link driver** (see step 1 below)
-- The firmware `.hex` file from this repo's Releases (e.g. `SW102_BAF_X.Y.Z.hex`) - download it and note where you saved it, e.g. `C:\SW102\`
+- The firmware `.hex` file from this repo's [`firmware`](https://github.com/moskil2/SW102_BAFANG_OSF/tree/main/firmware) folder (e.g. `SW102_BAF_X.Y.Z.hex`) - download it and note where you saved it, e.g. `C:\SW102\`
 
 This single `.hex` file is a complete, ready-to-flash image - it already contains the bootloader, the Nordic SoftDevice (BLE stack), and the application, merged together at build time. You don't need to download anything else from any other repository.
 
@@ -44,9 +44,9 @@ You can power the display straight from the ST-Link's 3.3V pin for flashing - no
    ```
    openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; nrf51 mass_erase; shutdown"
    ```
-4. Run the write-and-verify command, using the full path to wherever you saved the `.hex` file:
+4. Run the write-and-verify command, using the full path to wherever you saved the `.hex` file. Write the path with `/`, not `\` (OpenOCD drops `\`, so `C:\SW102\...` would not be found):
    ```
-   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; flash write_image C:\SW102\SW102_BAF_X.Y.Z.hex; verify_image C:\SW102\SW102_BAF_X.Y.Z.hex; reset halt; resume; shutdown"
+   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; flash write_image C:/SW102/SW102_BAF_X.Y.Z.hex; verify_image C:/SW102/SW102_BAF_X.Y.Z.hex; reset halt; resume; shutdown"
    ```
 
 These must be two separate commands, run one after the other - see Troubleshooting below for why. If `verify_image` reports no errors, the flash succeeded.
@@ -65,10 +65,16 @@ Disconnect the ST-Link, connect normal power (battery or the controller cable), 
 
 Once the bootloader is installed (first flash via ST-Link), later firmware updates can be done wirelessly - no need to open the case again.
 
+[![Watch the Bluetooth update video](https://img.youtube.com/vi/GyanRPCOuG8/maxresdefault.jpg)](https://www.youtube.com/watch?v=GyanRPCOuG8)
+
 ### What you need
 
 - The **nRF Connect** app (Android/iOS, by Nordic Semiconductor)
-- The firmware update package, e.g. `SW102_BAF_FW_X.Y.Z.zip`, transferred to your phone
+- The firmware update package from this repo's [`firmware`](https://github.com/moskil2/SW102_BAFANG_OSF/tree/main/firmware) folder, e.g. `SW102_BAF_FW_X.Y.Z.zip`, transferred to your phone
+
+### Before updating
+
+If you use STREET/RACE, switch to STREET first. A Bluetooth update is meant to keep the saved settings, but a full ST-Link flash erases them. If RACE were active at that point, the controller would keep the RACE table and the STREET table, stored only on the display, would be lost. With STREET active nothing important can be lost: at worst the RACE table, which starts again as a copy of STREET when you turn USE RACE back on.
 
 ### Steps
 

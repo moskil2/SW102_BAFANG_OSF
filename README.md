@@ -65,7 +65,7 @@ The simple, end-user version of the flashing procedure - tested on real hardware
 - A Windows PC
 - **OpenOCD** - download the Windows build from the [xPack OpenOCD releases page](https://github.com/xpack-dev-tools/openocd-xpack/releases) (the `...win32-x64.zip` asset) and unzip it anywhere, e.g. `C:\OpenOCD`
 - The **ST-Link driver** (see step 1 below)
-- The firmware `.hex` file from this repo's Releases (e.g. `SW102_BAF_X.Y.Z.hex`) - download it and note where you saved it, e.g. `C:\SW102\`
+- The firmware `.hex` file from this repo's [`firmware`](https://github.com/moskil2/SW102_BAFANG_OSF/tree/main/firmware) folder (e.g. `SW102_BAF_X.Y.Z.hex`) - download it and note where you saved it, e.g. `C:\SW102\`
 
 This single `.hex` file is a complete, ready-to-flash image - it already contains the bootloader, the Nordic SoftDevice (BLE stack), and the application, merged together at build time. You don't need to download anything else from any other repository.
 
@@ -138,9 +138,9 @@ The blue tape in the photos is just there so the drill doesn't accidentally scra
    ```
    openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; nrf51 mass_erase; shutdown"
    ```
-4. Run the write-and-verify command, using the full path to wherever you saved the `.hex` file:
+4. Run the write-and-verify command, using the full path to wherever you saved the `.hex` file. Write the path with `/`, not `\` (OpenOCD drops `\`, so `C:\SW102\...` would not be found):
    ```
-   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; flash write_image C:\SW102\SW102_BAF_X.Y.Z.hex; verify_image C:\SW102\SW102_BAF_X.Y.Z.hex; reset halt; resume; shutdown"
+   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; flash write_image C:/SW102/SW102_BAF_X.Y.Z.hex; verify_image C:/SW102/SW102_BAF_X.Y.Z.hex; reset halt; resume; shutdown"
    ```
 
 These must be two separate commands, run one after the other - see Troubleshooting below for why. If `verify_image` reports no errors, the flash succeeded.
@@ -164,7 +164,7 @@ Once the bootloader is installed (first flash via ST-Link), later firmware updat
 ### What you need
 
 - The **nRF Connect** app (Android/iOS, by Nordic Semiconductor)
-- The firmware update package, e.g. `SW102_BAF_FW_X.Y.Z.zip`, transferred to your phone
+- The firmware update package from this repo's [`firmware`](https://github.com/moskil2/SW102_BAFANG_OSF/tree/main/firmware) folder, e.g. `SW102_BAF_FW_X.Y.Z.zip`, transferred to your phone
 
 ### Before updating
 
@@ -212,12 +212,12 @@ Licensed under GPL-3.0 (see `source/LICENSE`). Based on [`anszom/SW102_LCD`](htt
 
 ## Resources
 
-Current build (v0.1.4) flash/RAM usage on the nRF51822:
+Current build (v0.1.5) flash/RAM usage on the nRF51822:
 
 | Resource | Budget | Used | Free |
 |---|---|---|---|
-| Flash (application region) | 130,048 B (127.0 KB) | 60,212 B (58.8 KB) | 69,836 B (68.2 KB, 53.7%) |
-| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,272 B (6.1 KB) | 15,232 B (14.9 KB, 70.8%) |
+| Flash (application region) | 130,048 B (127.0 KB) | 62,648 B (61.2 KB) | 67,400 B (65.8 KB, 51.8%) |
+| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,416 B (6.3 KB) | 15,088 B (14.7 KB, 70.2%) |
 
 RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same free space, not counted separately.
 
