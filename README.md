@@ -65,7 +65,7 @@ The simple, end-user version of the flashing procedure - tested on real hardware
 - A Windows PC
 - **OpenOCD** - download the Windows build from the [xPack OpenOCD releases page](https://github.com/xpack-dev-tools/openocd-xpack/releases) (the `...win32-x64.zip` asset) and unzip it anywhere, e.g. `C:\OpenOCD`
 - The **ST-Link driver** (see step 1 below)
-- The firmware `.hex` file: [`SW102_BAF_0.1.5.hex`](https://github.com/moskil2/SW102_BAFANG_OSF/raw/main/firmware/SW102_BAF_0.1.5.hex) - download it and note where you saved it, e.g. `C:\SW102\`
+- The firmware `.hex` file: [`SW102_BAF_0.1.5.hex`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.5/SW102_BAF_0.1.5.hex) - download it and note where you saved it, e.g. `C:\SW102\`
 
 This single `.hex` file is a complete, ready-to-flash image - it already contains the bootloader, the Nordic SoftDevice (BLE stack), and the application, merged together at build time. You don't need to download anything else from any other repository.
 
@@ -164,7 +164,7 @@ Once the bootloader is installed (first flash via ST-Link), later firmware updat
 ### What you need
 
 - The **nRF Connect** app (Android/iOS, by Nordic Semiconductor)
-- The firmware update package: [`SW102_BAF_FW_0.1.5.zip`](https://github.com/moskil2/SW102_BAFANG_OSF/raw/main/firmware/SW102_BAF_FW_0.1.5.zip), transferred to your phone
+- The firmware update package: [`SW102_BAF_FW_0.1.5.zip`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.5/SW102_BAF_FW_0.1.5.zip), transferred to your phone
 
 ### Before updating
 
