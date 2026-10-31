@@ -63,9 +63,9 @@ The simple, end-user version of the flashing procedure - tested on real hardware
 
 - An **ST-Link V2 programmer** (a cheap clone is fine, ~$5) - e.g. [search on Amazon](https://www.amazon.com/s?k=ST-Link+V2+programmer)
 - A Windows PC
-- **OpenOCD** - download the Windows build from the [xPack OpenOCD releases page](https://github.com/xpack-dev-tools/openocd-xpack/releases) (the `...win32-x64.zip` asset) and unzip it anywhere, e.g. `C:\OpenOCD`
+- **OpenOCD** - download the Windows build from the [xPack OpenOCD releases page](https://github.com/xpack-dev-tools/openocd-xpack/releases) (the `...win32-x64.zip` asset) and unzip it anywhere, e.g. `C:\OpenOCD`. The zip contains its own folder, so the `bin` folder ends up in `C:\OpenOCD\xpack-openocd-<version>\bin`
 - The **ST-Link driver** (see step 1 below)
-- The firmware `.hex` file: [`SW102_BAF_0.1.5.hex`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.5/SW102_BAF_0.1.5.hex) - download it and note where you saved it, e.g. `C:\SW102\`
+- The firmware `.hex` file: [`SW102_BAF_0.1.5.hex`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.5/SW102_BAF_0.1.5.hex) - download it, create the folder `C:\SW102` and move the downloaded `.hex` there
 
 This single `.hex` file is a complete, ready-to-flash image - it already contains the bootloader, the Nordic SoftDevice (BLE stack), and the application, merged together at build time. You don't need to download anything else from any other repository.
 
@@ -73,7 +73,7 @@ This single `.hex` file is a complete, ready-to-flash image - it already contain
 
 Plugging the ST-Link into USB alone is not enough - Windows needs the driver, or OpenOCD will fail with `Error: open failed`.
 
-1. Download **[STSW-LINK009](https://www.st.com/en/development-tools/stsw-link009.html)** from ST's website and unzip the downloaded file (e.g. into your Downloads folder).
+1. Download **[STSW-LINK009](https://www.st.com/en/development-tools/stsw-link009.html)** from ST's website (ST asks you to log in or enter an e-mail address before downloading) and unzip the downloaded file (e.g. into your Downloads folder).
 2. Open the unzipped folder, find `stlink_winusb_install.bat`, right-click it, and choose **"Run as administrator"** from the menu.
 3. Unplug and replug the ST-Link.
 
@@ -109,7 +109,7 @@ You can power the display straight from the ST-Link's 3.3V pin for flashing - no
 
 The most reliable way to reach the four pads is to gently drill four small holes, side by side, with a 3mm bit, then solder onto the pads as shown below.
 
-I don't recommend opening the button panel by force instead - it's glued firmly, and forcing it open usually damages the case enough that it can no longer be glued back together to keep it waterproof. Sealing the small drilled hole afterward with a dab of silicone, on the other hand, is easy.
+I don't recommend opening the button panel by force instead - it's glued firmly, and forcing it open usually damages the case enough that it can no longer be glued back together to keep it waterproof. Sealing the drilled holes afterward with a dab of silicone, on the other hand, is easy.
 
 The blue tape in the photos is just there so the drill doesn't accidentally scratch the display.
 
@@ -129,18 +129,18 @@ The blue tape in the photos is just there so the drill doesn't accidentally scra
 
 ### 3. Flash the firmware
 
-1. Open a Command Prompt (press the Windows key, type `cmd`, press Enter).
-2. Go into OpenOCD's `bin` folder - adjust the path to wherever you unzipped it in "What you need":
+1. Open a Command Prompt: press **Win+R**, type `cmd`, press Enter.
+2. Go into OpenOCD's `bin` folder - adjust the path to where you unzipped it and to your OpenOCD version (see "What you need"):
    ```
-   cd C:\OpenOCD\bin
+   cd C:\OpenOCD\xpack-openocd-0.12.0-7\bin
    ```
 3. Run the erase command (paste it exactly, then press Enter):
    ```
    openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; nrf51 mass_erase; shutdown"
    ```
-4. Run the write-and-verify command, using the full path to wherever you saved the `.hex` file. Write the path with `/`, not `\` (OpenOCD drops `\`, so `C:\SW102\...` would not be found):
+4. Run the write-and-verify command (paste it exactly, then press Enter). If you saved the `.hex` somewhere other than `C:\SW102`, change the path, and write it with `/`, not `\` (OpenOCD drops `\`, so `C:\SW102\...` would not be found):
    ```
-   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; flash write_image C:/SW102/SW102_BAF_X.Y.Z.hex; verify_image C:/SW102/SW102_BAF_X.Y.Z.hex; reset halt; resume; shutdown"
+   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; flash write_image C:/SW102/SW102_BAF_0.1.5.hex; verify_image C:/SW102/SW102_BAF_0.1.5.hex; reset halt; resume; shutdown"
    ```
 
 These must be two separate commands, run one after the other - see Troubleshooting below for why. If `verify_image` reports no errors, the flash succeeded.
@@ -164,7 +164,7 @@ Once the bootloader is installed (first flash via ST-Link), later firmware updat
 ### What you need
 
 - The **nRF Connect** app (Android/iOS, by Nordic Semiconductor)
-- The firmware update package: [`SW102_BAF_FW_0.1.5.zip`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.5/SW102_BAF_FW_0.1.5.zip), transferred to your phone
+- The firmware update package: [`SW102_BAF_FW_0.1.5.zip`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.5/SW102_BAF_FW_0.1.5.zip) - open the link on your phone and download it there
 
 ### Before updating
 
