@@ -1,0 +1,2907 @@
+diff --git a/firmware/SW102/Makefile b/firmware/SW102/Makefile
+index c5cf913..784321a 100644
+--- a/firmware/SW102/Makefile
++++ b/firmware/SW102/Makefile
+@@ -62,11 +62,21 @@ SRC_FILES += \
+   $(PROJ_DIR)/src/sw102/buttons.c \
+   $(PROJ_DIR)/src/sw102/screen_boot.c \
+   $(PROJ_DIR)/src/sw102/screen_main.c \
++  $(PROJ_DIR)/src/sw102/screen_test.c \
+   $(PROJ_DIR)/src/sw102/screen_cfg.c \
+   $(PROJ_DIR)/src/sw102/screen_cfg_utils.c \
+   $(PROJ_DIR)/src/sw102/screen_cfg_tree.c \
++  $(PROJ_DIR)/src/sw102/screen_bas_programming.c \
+   $(PROJ_DIR)/src/sw102/app_uart_fifo_mod.c \
+   $(PROJ_DIR)/src/sw102/uart.c \
++  $(PROJ_DIR)/src/sw102/bafang_protocol.c \
++  $(PROJ_DIR)/src/sw102/bafang_display.c \
++  $(PROJ_DIR)/src/sw102/bafang_calibration.c \
++  $(PROJ_DIR)/src/sw102/bafang_settings.c \
++  $(PROJ_DIR)/src/sw102/bafang_storage.c \
++  $(PROJ_DIR)/src/sw102/bafang_trip.c \
++  $(PROJ_DIR)/src/sw102/bafang_energy.c \
++  $(PROJ_DIR)/src/sw102/bafang_street_race.c \
+   $(COMMON_DIR)/src/utils.c \
+   $(COMMON_DIR)/src/state.c \
+   $(COMMON_DIR)/src/eeprom.c \
+@@ -318,9 +328,24 @@ erase:
+ # Generate DFU package
+ # Note: don't try the application-version-string option - it just dumbly pulls the string as a nubmer info the int32 in the settings (not what we want)
+ # Note: we now set debug mode so users can move to prior revisions, not just new ones.
++#
++# The application .hex is padded with 0xFF up to a fixed 80KB footprint
++# (0x1B000-0x2F000, well clear of the bootloader at ~0x3AC00) BEFORE
++# packaging for OTA - real 2026-09-16 incident: a DFU update to a build
++# ~13KB SMALLER than the one already on the device left the device stuck
++# in the bootloader after a reported-successful BLE transfer (full SWD
++# reflash of the exact same image booted fine, isolating the fault to
++# the DFU path, not the firmware). We don't have the DFU bootloader's own
++# source (community prebuilt binary) to confirm it erases only as much
++# flash as the incoming image needs rather than the whole app region, but
++# padding removes the risk either way, entirely from our own build - no
++# hardware access needed for every future update. release_build's own
++# SWD image below is unaffected (OpenOCD mass_erase already wipes
++# everything unconditionally) - only the OTA package is padded.
+ generate_dfu_package: $(OUTPUT_DIRECTORY)/nrf51822_sw102.hex
+ 	mkdir -p $(RELEASE_DIRECTORY)
+-	$(NRFUTIL) pkg generate --application ./$(OUTPUT_DIRECTORY)/nrf51822_sw102.hex --key-file $(KEYFILE) --application-version $(VERSION_NUM) --hw-version 51 --sd-req 0x87 $(RELEASE_DIRECTORY)/sw102-otaupdate-xxx.zip
++	$(SREC_PATH)srec_cat $(OUTPUT_DIRECTORY)/nrf51822_sw102.hex -Intel -fill 0xFF 0x1B000 0x2F000 -o $(OUTPUT_DIRECTORY)/nrf51822_sw102_padded.hex -Intel
++	$(NRFUTIL) pkg generate --application ./$(OUTPUT_DIRECTORY)/nrf51822_sw102_padded.hex --key-file $(KEYFILE) --application-version $(VERSION_NUM) --hw-version 51 --sd-req 0x87 $(RELEASE_DIRECTORY)/sw102-otaupdate-xxx.zip
+ 
+ # Generate a prebuilt bin file with bootloader apploand and valid app crc
+ # per appendix 1 here: https://devzone.nordicsemi.com/nordic/nordic-blog/b/blog/posts/getting-started-with-nordics-secure-dfu-bootloader
+diff --git a/firmware/SW102/assets/font_battery.xbm b/firmware/SW102/assets/font_battery.xbm
+index e10832b..62245ba 100644
+--- a/firmware/SW102/assets/font_battery.xbm
++++ b/firmware/SW102/assets/font_battery.xbm
+@@ -1,9 +1,9 @@
+-#define font_battery_width 8
+-#define font_battery_height 63
++#define font_battery_width 7
++#define font_battery_height 73
+ static char font_battery_bits[] = {
+-  0x3C, 0xCF, 0xF3, 0x3C, 0xFF, 0x7F, 0xFF, 0x01, 0x7E, 0x7E, 0x80, 0xFF, 
+-  0x7B, 0x7D, 0x00, 0x7F, 0xFF, 0x1D, 0x6E, 0x76, 0x79, 0xFF, 0xBD, 0x76, 
+-  0x76, 0x89, 0xFF, 0xF8, 0xF7, 0xF7, 0x00, 0xFF, 0xB8, 0x76, 0x76, 0x8E, 
+-  0xFF, 0x81, 0x76, 0x76, 0x8D, 0xFF, 0x3E, 0xCE, 0xF6, 0xF8, 0xFF, 0x89, 
+-  0x76, 0x76, 0x89, 0xFF, 0xF9, 0x76, 0x76, 0x89, 0xFF, 0xF0, 0x8F, 0x7F, 
+-  0x8F, 0xF0, 0xFF, };
++0x3d,0x5a,0x6d,0x77,0x5b,0x2d,0x5e,0x7f,0x3f,0x7f,0x41,0x3e,0x3e,0x3e,0x41,
++0x7f,0x3d,0x00,0x3f,0x7f,0x1d,0x2e,0x36,0x36,0x39,0x7f,0x5d,0x3e,0x36,0x36,
++0x49,0x7f,0x67,0x6b,0x6d,0x00,0x6f,0x7f,0x50,0x36,0x36,0x36,0x4e,0x7f,0x41,
++0x36,0x36,0x36,0x4d,0x7f,0x7e,0x3e,0x4e,0x72,0x7c,0x7f,0x49,0x36,0x36,0x36,
++0x49,0x7f,0x59,0x36,0x36,0x36,0x41,0x7f,0x78,0x67,0x1f,0x67,0x78
++};
+diff --git a/firmware/SW102/assets/font_full.xbm b/firmware/SW102/assets/font_full.xbm
+index 7bedcee..b192908 100644
+--- a/firmware/SW102/assets/font_full.xbm
++++ b/firmware/SW102/assets/font_full.xbm
+@@ -1,105 +1,54 @@
+-#define font_full_width 13
+-#define font_full_height 611
++#define font_full_width 12
++#define font_full_height 375
+ static char font_full_bits[] = {
+-  0xFF, 0x1F, 0xFF, 0x1F, 0xFF, 0x1F, 0xFF, 0x1F, 0xFF, 0x1F, 0x81, 0x1C, 
+-  0xFF, 0x1F, 0xF1, 0x1F, 0xFF, 0x1F, 0xF1, 0x1F, 0xFF, 0x1F, 0x7F, 0x1F, 
+-  0x6F, 0x1D, 0x0F, 0x1E, 0x63, 0x1F, 0x6F, 0x1C, 0x07, 0x1F, 0x6B, 0x1F, 
+-  0xEF, 0x1F, 0xFF, 0x1F, 0xC7, 0x1E, 0xDB, 0x1D, 0x01, 0x10, 0xBB, 0x1D, 
+-  0x37, 0x1E, 0xFF, 0x1F, 0xE3, 0x1F, 0xDD, 0x1F, 0xDD, 0x1D, 0x63, 0x1E, 
+-  0x9F, 0x1F, 0xCF, 0x1F, 0x33, 0x1E, 0xDD, 0x1D, 0xDF, 0x1D, 0x3F, 0x1E, 
+-  0xFF, 0x1F, 0x3F, 0x1E, 0xC3, 0x1C, 0xED, 0x1D, 0xDD, 0x1D, 0xBB, 0x1D, 
+-  0x7F, 0x1E, 0x7F, 0x1D, 0x9F, 0x1D, 0xFF, 0x1F, 0xF1, 0x1F, 0xFF, 0x1F, 
+-  0x07, 0x1F, 0xF8, 0x18, 0xFE, 0x1B, 0xFF, 0x1F, 0xFE, 0x1B, 0xF8, 0x18, 
+-  0x07, 0x1F, 0xFF, 0x1F, 0xDB, 0x1F, 0xE7, 0x1F, 0x81, 0x1F, 0xE7, 0x1F, 
+-  0xDB, 0x1F, 0xFF, 0x1F, 0xBF, 0x1F, 0xBF, 0x1F, 0xBF, 0x1F, 0x07, 0x1C, 
+-  0xBF, 0x1F, 0xBF, 0x1F, 0xBF, 0x1F, 0xFF, 0x1F, 0xFF, 0x18, 0xFF, 0x1F, 
+-  0xBF, 0x1F, 0xBF, 0x1F, 0xBF, 0x1F, 0xFF, 0x1F, 0xFF, 0x1C, 0xFF, 0x1F, 
+-  0xFF, 0x19, 0x3F, 0x1E, 0xC7, 0x1F, 0xF9, 0x1F, 0xFF, 0x1F, 0x07, 0x1F, 
+-  0xF9, 0x1C, 0xFD, 0x1D, 0xFD, 0x1D, 0xF9, 0x1C, 0x07, 0x1F, 0xFF, 0x1F, 
+-  0xFD, 0x1D, 0xFD, 0x1D, 0x01, 0x1C, 0xFF, 0x1D, 0xFF, 0x1D, 0xFF, 0x1F, 
+-  0xFB, 0x1D, 0xFD, 0x1C, 0x7D, 0x1D, 0xBD, 0x1D, 0xD9, 0x1D, 0xE3, 0x1D, 
+-  0xFF, 0x1F, 0xFB, 0x1E, 0xFD, 0x1D, 0xDD, 0x1D, 0xDD, 0x1D, 0xDD, 0x1D, 
+-  0x23, 0x1E, 0xFF, 0x1F, 0x3F, 0x1F, 0x4F, 0x1F, 0x77, 0x1F, 0x79, 0x1F, 
+-  0x01, 0x1C, 0x7F, 0x1F, 0xFF, 0x1F, 0xE1, 0x1E, 0xED, 0x1D, 0xED, 0x1D, 
+-  0xED, 0x1D, 0xCD, 0x1C, 0x1F, 0x1E, 0xFF, 0x1F, 0x07, 0x1F, 0xDB, 0x1C, 
+-  0xED, 0x1D, 0xED, 0x1D, 0xCD, 0x1C, 0x1B, 0x1E, 0xFF, 0x1F, 0xFD, 0x1F, 
+-  0xFD, 0x1D, 0x7D, 0x1E, 0x9D, 0x1F, 0xE5, 0x1F, 0xF9, 0x1F, 0xFF, 0x1F, 
+-  0x23, 0x1E, 0xDD, 0x1D, 0xDD, 0x1D, 0xDD, 0x1D, 0xDD, 0x1D, 0x23, 0x1E, 
+-  0xFF, 0x1F, 0xC3, 0x1E, 0x99, 0x1D, 0xBD, 0x1D, 0xBD, 0x1D, 0xD9, 0x1E, 
+-  0x07, 0x1F, 0xFF, 0x1F, 0xCF, 0x1C, 0xFF, 0x1F, 0xCF, 0x18, 0xFF, 0x1F, 
+-  0x9F, 0x1F, 0x9F, 0x1F, 0x9F, 0x1F, 0x6F, 0x1F, 0x6F, 0x1F, 0x6F, 0x1F, 
+-  0x67, 0x1E, 0xF7, 0x1E, 0xFF, 0x1F, 0x5F, 0x1F, 0x5F, 0x1F, 0x5F, 0x1F, 
+-  0x5F, 0x1F, 0x5F, 0x1F, 0x5F, 0x1F, 0x5F, 0x1F, 0x5F, 0x1F, 0xFF, 0x1F, 
+-  0xF7, 0x1E, 0x67, 0x1E, 0x6F, 0x1F, 0x6F, 0x1F, 0x6F, 0x1F, 0x9F, 0x1F, 
+-  0x9F, 0x1F, 0x9F, 0x1F, 0xFF, 0x1F, 0xFB, 0x1F, 0xFD, 0x1F, 0x9D, 0x1C, 
+-  0xED, 0x1F, 0xF3, 0x1F, 0xFF, 0x1F, 0x0F, 0x1E, 0xF7, 0x1D, 0xFB, 0x1B, 
+-  0x1D, 0x17, 0xED, 0x16, 0xED, 0x16, 0xED, 0x16, 0x0D, 0x16, 0xFB, 0x1A, 
+-  0x73, 0x1F, 0x8F, 0x1F, 0xFF, 0x1F, 0xFF, 0x1D, 0x3F, 0x1E, 0x47, 0x1F, 
+-  0x79, 0x1F, 0x79, 0x1F, 0x47, 0x1F, 0x3F, 0x1E, 0xFF, 0x1D, 0xFF, 0x1F, 
+-  0x01, 0x1C, 0xDD, 0x1D, 0xDD, 0x1D, 0xDD, 0x1D, 0xDD, 0x1D, 0x23, 0x1E, 
+-  0xFF, 0x1F, 0x07, 0x1F, 0xFB, 0x1E, 0xFD, 0x1D, 0xFD, 0x1D, 0xFD, 0x1D, 
+-  0xFB, 0x1E, 0xFF, 0x1F, 0x01, 0x1C, 0xFD, 0x1D, 0xFD, 0x1D, 0xFD, 0x1D, 
+-  0xFD, 0x1D, 0xFB, 0x1E, 0x07, 0x1F, 0xFF, 0x1F, 0x01, 0x1C, 0xDD, 0x1D, 
+-  0xDD, 0x1D, 0xDD, 0x1D, 0xDD, 0x1D, 0xDD, 0x1D, 0xFF, 0x1F, 0x01, 0x1C, 
+-  0xDD, 0x1F, 0xDD, 0x1F, 0xDD, 0x1F, 0xDD, 0x1F, 0xFF, 0x1F, 0x07, 0x1F, 
+-  0xFB, 0x1E, 0xFD, 0x1D, 0xFD, 0x1D, 0xDD, 0x1D, 0xDD, 0x1D, 0x1B, 0x1E, 
+-  0xFF, 0x1F, 0x01, 0x1C, 0xDF, 0x1F, 0xDF, 0x1F, 0xDF, 0x1F, 0xDF, 0x1F, 
+-  0xDF, 0x1F, 0x01, 0x1C, 0xFF, 0x1F, 0x01, 0x1C, 0xFF, 0x1F, 0xFF, 0x17, 
+-  0xFF, 0x17, 0x01, 0x18, 0xFF, 0x1F, 0x01, 0x1C, 0xDF, 0x1F, 0xAF, 0x1F, 
+-  0x77, 0x1F, 0xFB, 0x1E, 0xFD, 0x1D, 0xFF, 0x1F, 0x01, 0x1C, 0xFF, 0x1D, 
+-  0xFF, 0x1D, 0xFF, 0x1D, 0xFF, 0x1D, 0xFF, 0x1F, 0x01, 0x1C, 0xF3, 0x1F, 
+-  0xCF, 0x1F, 0x3F, 0x1F, 0x3F, 0x1F, 0xCF, 0x1F, 0xF3, 0x1F, 0x01, 0x1C, 
+-  0xFF, 0x1F, 0x01, 0x1C, 0xF9, 0x1F, 0xE7, 0x1F, 0xDF, 0x1F, 0x3F, 0x1F, 
+-  0xFF, 0x1C, 0x01, 0x1C, 0xFF, 0x1F, 0x07, 0x1F, 0xFB, 0x1E, 0xFD, 0x1D, 
+-  0xFD, 0x1D, 0xFD, 0x1D, 0xFB, 0x1E, 0x07, 0x1F, 0xFF, 0x1F, 0x01, 0x1C, 
+-  0xDD, 0x1F, 0xDD, 0x1F, 0xDD, 0x1F, 0xDD, 0x1F, 0xE3, 0x1F, 0xFF, 0x1F, 
+-  0x07, 0x1F, 0xFB, 0x1E, 0xFD, 0x1D, 0xFD, 0x1D, 0xFD, 0x19, 0xFB, 0x16, 
+-  0x07, 0x1F, 0xFF, 0x1F, 0x01, 0x1C, 0xDD, 0x1F, 0xDD, 0x1F, 0xDD, 0x1F, 
+-  0x9D, 0x1F, 0x63, 0x1E, 0xFF, 0x1D, 0xFF, 0x1F, 0xE3, 0x1E, 0xDD, 0x1D, 
+-  0xDD, 0x1D, 0xDD, 0x1D, 0xDD, 0x1D, 0x3B, 0x1E, 0xFF, 0x1F, 0xFD, 0x1F, 
+-  0xFD, 0x1F, 0xFD, 0x1F, 0x01, 0x1C, 0xFD, 0x1F, 0xFD, 0x1F, 0xFD, 0x1F, 
+-  0xFF, 0x1F, 0x01, 0x1E, 0xFF, 0x1C, 0xFF, 0x1D, 0xFF, 0x1D, 0xFF, 0x1D, 
+-  0xFF, 0x1C, 0x01, 0x1E, 0xFF, 0x1F, 0xF9, 0x1F, 0xC7, 0x1F, 0x3F, 0x1F, 
+-  0xFF, 0x1C, 0xFF, 0x1C, 0x3F, 0x1F, 0xC7, 0x1F, 0xF9, 0x1F, 0xFF, 0x1F, 
+-  0xFD, 0x1F, 0xE3, 0x1F, 0x1F, 0x1F, 0xFF, 0x1C, 0x0F, 0x1F, 0xF1, 0x1F, 
+-  0x0F, 0x1F, 0xFF, 0x1C, 0x1F, 0x1F, 0xE3, 0x1F, 0xFD, 0x1F, 0xFF, 0x1F, 
+-  0xFD, 0x1D, 0xF9, 0x1E, 0x27, 0x1F, 0xDF, 0x1F, 0x27, 0x1F, 0xF9, 0x1E, 
+-  0xFD, 0x1D, 0xFF, 0x1F, 0xFD, 0x1F, 0xF3, 0x1F, 0xCF, 0x1F, 0x3F, 0x1C, 
+-  0xCF, 0x1F, 0xF3, 0x1F, 0xFD, 0x1F, 0xFF, 0x1F, 0xFD, 0x1C, 0x7D, 0x1D, 
+-  0xBD, 0x1D, 0xDD, 0x1D, 0xED, 0x1D, 0xF5, 0x1D, 0xF9, 0x1D, 0xFF, 0x1F, 
+-  0x01, 0x10, 0xFD, 0x17, 0xFF, 0x1F, 0xF9, 0x1F, 0xC7, 0x1F, 0x3F, 0x1E, 
+-  0xFF, 0x19, 0xFF, 0x1F, 0xFD, 0x17, 0x01, 0x10, 0xFF, 0x1F, 0xF7, 0x1F, 
+-  0xFB, 0x1F, 0xFD, 0x1F, 0xFD, 0x1F, 0xFB, 0x1F, 0xF7, 0x1F, 0xFF, 0x1F, 
+-  0xFF, 0x0F, 0xFF, 0x0F, 0xFF, 0x0F, 0xFF, 0x0F, 0xFF, 0x0F, 0xFF, 0x0F, 
+-  0xFF, 0x1F, 0xFE, 0x1F, 0xFD, 0x1F, 0xFF, 0x1F, 0x6F, 0x1E, 0xB7, 0x1D, 
+-  0xB7, 0x1D, 0xB7, 0x1D, 0xB7, 0x1E, 0x0F, 0x1C, 0xFF, 0x1F, 0x00, 0x1C, 
+-  0xE7, 0x1C, 0xF7, 0x1D, 0xF7, 0x1D, 0xE7, 0x1C, 0x0F, 0x1E, 0xFF, 0x1F, 
+-  0x0F, 0x1E, 0xE7, 0x1C, 0xF7, 0x1D, 0xF7, 0x1D, 0xEF, 0x1E, 0xFF, 0x1F, 
+-  0x0F, 0x1E, 0xE7, 0x1C, 0xF7, 0x1D, 0xF7, 0x1D, 0xE7, 0x1C, 0x00, 0x1C, 
+-  0xFF, 0x1F, 0x0F, 0x1E, 0xA7, 0x1C, 0xB7, 0x1D, 0xB7, 0x1D, 0xA7, 0x1D, 
+-  0x8F, 0x1E, 0xFF, 0x1F, 0xF7, 0x1F, 0x01, 0x1C, 0xF6, 0x1F, 0xF6, 0x1F, 
+-  0xFF, 0x1F, 0x0F, 0x1E, 0xE7, 0x14, 0xF7, 0x0D, 0xF7, 0x0D, 0xE7, 0x04, 
+-  0x07, 0x10, 0xFF, 0x1F, 0x00, 0x1C, 0xEF, 0x1F, 0xF7, 0x1F, 0xF7, 0x1F, 
+-  0xF7, 0x1F, 0x0F, 0x1C, 0xFF, 0x1F, 0x05, 0x1C, 0xFF, 0x1F, 0xFF, 0x0F, 
+-  0x05, 0x00, 0xFF, 0x1F, 0x00, 0x1C, 0xBF, 0x1F, 0x5F, 0x1F, 0xEF, 0x1E, 
+-  0xF7, 0x1D, 0xFF, 0x1F, 0x00, 0x1C, 0xFF, 0x1F, 0x07, 0x1C, 0xF7, 0x1F, 
+-  0xF7, 0x1F, 0xF7, 0x1F, 0x0F, 0x1C, 0xF7, 0x1F, 0xF7, 0x1F, 0xF7, 0x1F, 
+-  0x0F, 0x1C, 0xFF, 0x1F, 0x07, 0x1C, 0xEF, 0x1F, 0xF7, 0x1F, 0xF7, 0x1F, 
+-  0xF7, 0x1F, 0x0F, 0x1C, 0xFF, 0x1F, 0x0F, 0x1E, 0xE7, 0x1C, 0xF7, 0x1D, 
+-  0xF7, 0x1D, 0xE7, 0x1C, 0x0F, 0x1E, 0xFF, 0x1F, 0x07, 0x00, 0xE7, 0x1C, 
+-  0xF7, 0x1D, 0xF7, 0x1D, 0xE7, 0x1C, 0x0F, 0x1E, 0xFF, 0x1F, 0x0F, 0x1E, 
+-  0xE7, 0x1C, 0xF7, 0x1D, 0xF7, 0x1D, 0xE7, 0x1C, 0x07, 0x00, 0xFF, 0x1F, 
+-  0x07, 0x1C, 0xEF, 0x1F, 0xF7, 0x1F, 0xF7, 0x1F, 0xFF, 0x1F, 0xCF, 0x1E, 
+-  0xB7, 0x1D, 0xB7, 0x1D, 0xB7, 0x1D, 0x6F, 0x1E, 0xFF, 0x1F, 0xF7, 0x1F, 
+-  0x01, 0x1C, 0xF7, 0x1D, 0xF7, 0x1D, 0xFF, 0x1F, 0x07, 0x1E, 0xFF, 0x1D, 
+-  0xFF, 0x1D, 0xFF, 0x1D, 0xFF, 0x1E, 0x07, 0x1C, 0xFF, 0x1F, 0xE7, 0x1F, 
+-  0x1F, 0x1F, 0xFF, 0x1C, 0xFF, 0x1C, 0x1F, 0x1F, 0xE7, 0x1F, 0xFF, 0x1F, 
+-  0xE7, 0x1F, 0x1F, 0x1F, 0xFF, 0x1C, 0x1F, 0x1F, 0xE7, 0x1F, 0x1F, 0x1F, 
+-  0xFF, 0x1C, 0x1F, 0x1F, 0xE7, 0x1F, 0xFF, 0x1F, 0xF7, 0x1D, 0x4F, 0x1E, 
+-  0xBF, 0x1F, 0xBF, 0x1F, 0x4F, 0x1E, 0xF7, 0x1D, 0xFF, 0x1F, 0xE7, 0x0F, 
+-  0x9F, 0x0F, 0x7F, 0x16, 0xFF, 0x18, 0x1F, 0x1F, 0xE7, 0x1F, 0xFF, 0x1F, 
+-  0xF7, 0x1C, 0x77, 0x1D, 0xB7, 0x1D, 0xD7, 0x1D, 0xE7, 0x1D, 0xFF, 0x1F, 
+-  0xBF, 0x1F, 0xBF, 0x1F, 0x41, 0x10, 0xFD, 0x17, 0xFD, 0x17, 0xFF, 0x1F, 
+-  0x01, 0x00, 0xFF, 0x1F, 0xFD, 0x17, 0xFD, 0x17, 0x41, 0x10, 0xBF, 0x1F, 
+-  0xBF, 0x1F, 0xFF, 0x1F, 0xBF, 0x1F, 0xDF, 0x1F, 0xDF, 0x1F, 0xDF, 0x1F, 
+-  0xBF, 0x1F, 0xBF, 0x1F, 0xBF, 0x1F, 0xDF, 0x1F, 0xFF, 0x1F, };
++0xff,0x0f,0xff,0x0f,0xff,0x0f,0xff,0x0f,0xff,0x0f,0xff,0x0f,0x80,0x0e,0xff,
++0x0f,0xfc,0x0f,0xff,0x0f,0xfc,0x0f,0xff,0x0f,0x78,0x0e,0xba,0x0f,0xd8,0x0f,
++0xef,0x0f,0x37,0x0e,0xbb,0x0e,0x3c,0x0e,0xff,0x0f,0x01,0x0f,0xfe,0x0e,0xff,
++0x0f,0xfe,0x0e,0x01,0x0f,0xff,0x0f,0xef,0x0f,0xef,0x0f,0x83,0x0f,0xef,0x0f,
++0xef,0x0f,0xff,0x0f,0x7f,0x0e,0xff,0x0f,0xef,0x0f,0xef,0x0f,0xef,0x0f,0xef,
++0x0f,0xef,0x0f,0xff,0x0f,0xff,0x0e,0xff,0x0f,0xff,0x0e,0x3f,0x0f,0xcf,0x0f,
++0xf3,0x0f,0xfc,0x0f,0xff,0x0f,0x01,0x0f,0xfe,0x0e,0xfe,0x0e,0x01,0x0f,0xff,
++0x0f,0xfd,0x0e,0x00,0x0e,0xff,0x0e,0xff,0x0f,0x3d,0x0e,0xde,0x0e,0xee,0x0e,
++0xf1,0x0e,0xff,0x0f,0x7d,0x0f,0xfe,0x0e,0xee,0x0e,0x11,0x0f,0xff,0x0f,0xe7,
++0x0f,0xeb,0x0f,0xed,0x0f,0x00,0x0e,0xff,0x0f,0x60,0x0f,0xee,0x0e,0xee,0x0e,
++0x0e,0x0f,0xff,0x0f,0x01,0x0f,0xee,0x0e,0xee,0x0e,0x1d,0x0f,0xff,0x0f,0xfe,
++0x0f,0x3e,0x0e,0xc6,0x0f,0xf8,0x0f,0xff,0x0f,0x11,0x0f,0xee,0x0e,0xee,0x0e,
++0x11,0x0f,0xff,0x0f,0x71,0x0f,0xee,0x0e,0xee,0x0e,0x01,0x0f,0xff,0x0f,0xef,
++0x0e,0xff,0x0f,0x6f,0x0e,0xff,0x0f,0xd7,0x0f,0xd7,0x0f,0xd7,0x0f,0xd7,0x0f,
++0xd7,0x0f,0xff,0x0f,0xfd,0x0f,0x5e,0x0e,0xee,0x0f,0xf1,0x0f,0xff,0x0f,0x01,
++0x0e,0xee,0x0f,0xee,0x0f,0x01,0x0e,0xff,0x0f,0x00,0x0e,0xee,0x0e,0xee,0x0e,
++0x11,0x0f,0xff,0x0f,0x01,0x0f,0xfe,0x0e,0xfe,0x0e,0x7d,0x0f,0xff,0x0f,0x00,
++0x0e,0xfe,0x0e,0x7d,0x0f,0x83,0x0f,0xff,0x0f,0x00,0x0e,0xee,0x0e,0xfe,0x0e,
++0xff,0x0f,0x00,0x0e,0xee,0x0f,0xfe,0x0f,0xff,0x0f,0x01,0x0f,0xfe,0x0e,0xee,
++0x0e,0x0d,0x0f,0xff,0x0f,0x00,0x0e,0xef,0x0f,0xef,0x0f,0x00,0x0e,0xff,0x0f,
++0x02,0x0e,0xff,0x0f,0x3e,0x0f,0xfe,0x0e,0xfe,0x0e,0x00,0x0f,0xff,0x0f,0x00,
++0x0e,0xef,0x0f,0x93,0x0f,0x7c,0x0e,0xff,0x0f,0x00,0x0e,0xff,0x0e,0xff,0x0e,
++0xff,0x0e,0xff,0x0f,0x00,0x0e,0xf9,0x0f,0xf3,0x0f,0xf9,0x0f,0x00,0x0e,0xff,
++0x0f,0x00,0x0e,0xf9,0x0f,0xe7,0x0f,0x9f,0x0f,0x00,0x0e,0xff,0x0f,0x01,0x0f,
++0xfe,0x0e,0xfe,0x0e,0xfe,0x0e,0x01,0x0f,0xff,0x0f,0x00,0x0e,0xee,0x0f,0xee,
++0x0f,0xf1,0x0f,0xff,0x0f,0x81,0x0f,0x7e,0x0f,0x7e,0x0f,0x81,0x0e,0xff,0x0f,
++0x00,0x0e,0xee,0x0f,0xee,0x0f,0x11,0x0e,0xff,0x0f,0x71,0x0f,0xee,0x0e,0xee,
++0x0e,0x1d,0x0f,0xff,0x0f,0xfe,0x0f,0x00,0x0e,0xfe,0x0f,0xff,0x0f,0x00,0x0f,
++0xff,0x0e,0xff,0x0e,0x00,0x0f,0xff,0x0f,0xf0,0x0f,0x8f,0x0f,0x7f,0x0e,0x8f,
++0x0f,0xf0,0x0f,0xff,0x0f,0x00,0x0e,0x3f,0x0f,0x9f,0x0f,0x3f,0x0f,0x00,0x0e,
++0xff,0x0f,0x7c,0x0e,0x93,0x0f,0xef,0x0f,0x93,0x0f,0x7c,0x0e,0xff,0x0f,0xf8,
++0x0f,0xf7,0x0f,0x0f,0x0e,0xf7,0x0f,0xf8,0x0f,0xff,0x0f,0x7e,0x0e,0x8e,0x0e,
++0xf2,0x0e,0xfc,0x0e,0xff,0x0f,0xff,0x0e,0xff,0x0e,0xff,0x0e,0xff,0x0e,0xff,
++0x0f,0x1f,0x0f,0xef,0x0e,0xef,0x0e,0x1f,0x0e,0xff,0x0e,0xff,0x0f,0x00,0x0e,
++0xef,0x0e,0xef,0x0e,0x1f,0x0f,0xff,0x0f,0x1f,0x0f,0xef,0x0e,0xef,0x0e,0x5f,
++0x0f,0xff,0x0f,0x1f,0x0f,0xef,0x0e,0xef,0x0e,0x00,0x0e,0xff,0x0f,0x1f,0x0f,
++0xaf,0x0e,0xaf,0x0e,0x9f,0x0e,0xff,0x0f,0xef,0x0f,0x01,0x0e,0xee,0x0f,0xff,
++0x0f,0x1f,0x0f,0xef,0x0e,0xef,0x0e,0x1f,0x00,0xff,0x0f,0x00,0x0e,0xef,0x0f,
++0xef,0x0f,0x1f,0x0e,0xff,0x0f,0x0b,0x0e,0xff,0x0f,0xff,0x0b,0xff,0x07,0x0b,
++0x08,0xff,0x0f,0x00,0x0e,0xbf,0x0f,0x5f,0x0f,0xef,0x0e,0xff,0x0f,0x00,0x0f,
++0xff,0x0e,0xff,0x0e,0xff,0x0f,0x0f,0x0e,0xef,0x0f,0x1f,0x0e,0xef,0x0f,0x1f,
++0x0e,0xff,0x0f,0x0f,0x0e,0xdf,0x0f,0xef,0x0f,0x1f,0x0e,0xff,0x0f,0x1f,0x0f,
++0xef,0x0e,0xef,0x0e,0x1f,0x0f,0xff,0x0f,0x1f,0x00,0xef,0x0e,0xef,0x0e,0x1f,
++0x0f,0xff,0x0f,0x1f,0x0f,0xef,0x0e,0xaf,0x0e,0x1f,0x0f,0xff,0x0e,0xff,0x0f,
++0xef,0x0f,0x0f,0x0e,0xdf,0x0f,0xff,0x0f,0x9f,0x0e,0xaf,0x0e,0x2f,0x0f,0xff,
++0x0f,0xef,0x0f,0x01,0x0e,0xef,0x0e,0xff,0x0f,0x0f,0x0f,0xff,0x0e,0xff,0x0e,
++0x0f,0x0e,0xff,0x0f,0xcf,0x0f,0x3f,0x0f,0xff,0x0e,0x3f,0x0f,0xcf,0x0f,0xff,
++0x0f,0x0f,0x0f,0xff,0x0e,0x1f,0x0f,0xff,0x0e,0x0f,0x0f,0xff,0x0f,0xef,0x0e,
++0x5f,0x0f,0xbf,0x0f,0x5f,0x0f,0xef,0x0e,0xff,0x0f,0x0f,0x0f,0xff,0x0e,0xff,
++0x0e,0x0f,0x00,0xff,0x0f,0xef,0x0e,0x6f,0x0e,0xaf,0x0e,0xcf,0x0e,0xff,0x0f
++};
+diff --git a/firmware/SW102/assets/font_speed.xbm b/firmware/SW102/assets/font_speed.xbm
+index 30ef92f..b1b4ab9 100644
+--- a/firmware/SW102/assets/font_speed.xbm
++++ b/firmware/SW102/assets/font_speed.xbm
+@@ -1,46 +1,80 @@
+-#define font_speed_width 21
+-#define font_speed_height 168
++#define font_speed_width 35
++#define font_speed_height 228
+ static char font_speed_bits[] = {
+-  0xFF, 0xFF, 0x03, 0xFF, 0xFF, 0x03, 0xFF, 0xFF, 0x1F, 0x3F, 0x80, 0x1F, 
+-  0x07, 0x00, 0x1C, 0x03, 0x00, 0x18, 0xC1, 0x7F, 0x10, 0xF1, 0xFF, 0x11, 
+-  0xF8, 0xFF, 0x03, 0xF8, 0xFF, 0x03, 0xF8, 0xFF, 0x03, 0xF8, 0xFF, 0x03, 
+-  0xF8, 0xFF, 0x03, 0xF1, 0xFF, 0x11, 0xC1, 0x7F, 0x10, 0x03, 0x00, 0x18, 
+-  0x07, 0x00, 0x1C, 0x3F, 0x80, 0x1F, 0xFF, 0xFF, 0x1F, 0xFF, 0xFF, 0x1F, 
+-  0xFF, 0xFF, 0x1F, 0xF1, 0xFF, 0x03, 0xF1, 0xFF, 0x03, 0xF1, 0xFF, 0x03, 
+-  0xF8, 0xFF, 0x03, 0xF8, 0xFF, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+-  0x00, 0x00, 0x00, 0xFF, 0xFF, 0x03, 0xFF, 0xFF, 0x03, 0xFF, 0xFF, 0x03, 
+-  0xFF, 0xFF, 0x03, 0xFF, 0xFF, 0x03, 0xFF, 0xFF, 0x1F, 0xFF, 0xFF, 0x1F, 
+-  0xFF, 0xFF, 0x1F, 0xF1, 0xFF, 0x03, 0xF1, 0xFF, 0x01, 0xF8, 0xFF, 0x00, 
+-  0xF8, 0x7F, 0x00, 0xF8, 0x3F, 0x00, 0xF8, 0x1F, 0x02, 0xF8, 0x0F, 0x03, 
+-  0xF8, 0x87, 0x03, 0xF0, 0xC3, 0x03, 0xE1, 0xE0, 0x03, 0x01, 0xF8, 0x03, 
+-  0x03, 0xFC, 0x03, 0x07, 0xFF, 0x03, 0xFF, 0xFF, 0x1F, 0xFF, 0xFF, 0x1F, 
+-  0xF1, 0xFF, 0x11, 0xF1, 0xFF, 0x03, 0xF8, 0xFF, 0x03, 0xF8, 0xF1, 0x03, 
+-  0xF8, 0xF1, 0x03, 0xF8, 0xF1, 0x03, 0xF8, 0xF1, 0x03, 0xF0, 0xF1, 0x03, 
+-  0xF1, 0xE0, 0x01, 0x01, 0xE4, 0x10, 0x03, 0x06, 0x10, 0x07, 0x0F, 0x18, 
+-  0xFF, 0x1F, 0x1C, 0xFF, 0xFF, 0x1F, 0xFF, 0xFF, 0x1F, 0xFF, 0x1F, 0x1E, 
+-  0xFF, 0x0F, 0x1E, 0xFF, 0x03, 0x1E, 0xFF, 0x30, 0x1E, 0x7F, 0x38, 0x1E, 
+-  0x1F, 0x3E, 0x1E, 0x87, 0x3F, 0x1E, 0xC3, 0x3F, 0x1E, 0xF0, 0x3F, 0x1E, 
+-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x3F, 0x1E, 
+-  0xFF, 0x3F, 0x1E, 0xFF, 0x3F, 0x1E, 0xFF, 0xFF, 0x1F, 0xFF, 0xFF, 0x1F, 
+-  0xFF, 0xFF, 0x11, 0x00, 0xF8, 0x11, 0x00, 0xFC, 0x03, 0x00, 0xFC, 0x03, 
+-  0x78, 0xFC, 0x03, 0x78, 0xFC, 0x03, 0x78, 0xFC, 0x03, 0x78, 0xFC, 0x03, 
+-  0x78, 0xF8, 0x01, 0x78, 0xF8, 0x11, 0xF8, 0xF0, 0x10, 0xF8, 0x01, 0x18, 
+-  0xFF, 0x01, 0x18, 0xFF, 0x07, 0x1E, 0xFF, 0xFF, 0x1F, 0xFF, 0xFF, 0x1F, 
+-  0x7F, 0x80, 0x1F, 0x0F, 0x00, 0x1C, 0x07, 0x00, 0x18, 0x03, 0xE3, 0x10, 
+-  0xE1, 0xF1, 0x11, 0xF1, 0xF9, 0x03, 0xF0, 0xF8, 0x03, 0xF8, 0xF8, 0x03, 
+-  0xF8, 0xF8, 0x03, 0xF8, 0xF8, 0x03, 0xF8, 0xF0, 0x01, 0xF8, 0xE1, 0x10, 
+-  0xF8, 0x01, 0x10, 0xF1, 0x03, 0x18, 0xFF, 0x0F, 0x1E, 0xFF, 0xFF, 0x1F, 
+-  0xFF, 0xFF, 0x1F, 0xFF, 0xFF, 0x1F, 0xF8, 0xFF, 0x1F, 0xF8, 0xFF, 0x1F, 
+-  0xF8, 0xFF, 0x1F, 0xF8, 0xFF, 0x0F, 0xF8, 0xFF, 0x01, 0xF8, 0x7F, 0x00, 
+-  0xF8, 0x0F, 0x10, 0xF8, 0x03, 0x1C, 0x78, 0x80, 0x1F, 0x08, 0xE0, 0x1F, 
+-  0x00, 0xFC, 0x1F, 0x00, 0xFF, 0x1F, 0xE0, 0xFF, 0x1F, 0xF8, 0xFF, 0x1F, 
+-  0xFF, 0xFF, 0x1F, 0xFF, 0xFF, 0x1F, 0xFF, 0xFF, 0x1F, 0xFF, 0x1F, 0x1C, 
+-  0x07, 0x0F, 0x18, 0x03, 0x06, 0x10, 0x01, 0xE4, 0x11, 0xF0, 0xE0, 0x01, 
+-  0xF8, 0xF1, 0x03, 0xF8, 0xF1, 0x03, 0xF8, 0xF1, 0x03, 0xF8, 0xF1, 0x03, 
+-  0xF8, 0xF1, 0x03, 0xF1, 0xE0, 0x01, 0x01, 0xE4, 0x11, 0x03, 0x06, 0x10, 
+-  0x07, 0x0F, 0x18, 0xFF, 0x1F, 0x1C, 0xFF, 0xFF, 0x1F, 0xFF, 0xFF, 0x1F, 
+-  0x0F, 0xFE, 0x1F, 0x03, 0xF8, 0x11, 0x01, 0xF0, 0x03, 0xE1, 0xF0, 0x03, 
+-  0xF0, 0xE1, 0x03, 0xF8, 0xE3, 0x03, 0xF8, 0xE3, 0x03, 0xF8, 0xE3, 0x03, 
+-  0xF8, 0xE3, 0x01, 0xF8, 0xF3, 0x11, 0xF1, 0x71, 0x10, 0xE1, 0x18, 0x18, 
+-  0x03, 0x00, 0x1C, 0x07, 0x00, 0x1E, 0x3F, 0xC0, 0x1F, 0xFF, 0xFF, 0x1F, 
+-  };
++0x1f,0x00,0x00,0xc0,0x07,0x1f,0x00,0x00,0xc0,0x07,0x1f,0x00,0x00,0xc0,0x07,
++0x1f,0x00,0x00,0xc0,0x07,0xe0,0xff,0xff,0x3f,0x00,0xe0,0xff,0xff,0x3f,0x00,
++0xe0,0xff,0xff,0x3f,0x00,0xe0,0xff,0xff,0x3f,0x00,0xe0,0xff,0xff,0x3f,0x00,
++0xe0,0xff,0xff,0x3f,0x00,0xe0,0xff,0xff,0x3f,0x00,0xe0,0xff,0xff,0x3f,0x00,
++0xe0,0xff,0xff,0x3f,0x00,0xe0,0xff,0xff,0x3f,0x00,0xe0,0xff,0xff,0x3f,0x00,
++0xe0,0xff,0xff,0x3f,0x00,0x1f,0x00,0x00,0xc0,0x07,0x1f,0x00,0x00,0xc0,0x07,
++0x1f,0x00,0x00,0xc0,0x07,0x1f,0x00,0x00,0xc0,0x07,0xff,0xff,0xff,0xff,0x07,
++0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,
++0x1f,0xfc,0xff,0x3f,0x00,0x1f,0xfc,0xff,0x3f,0x00,0x1f,0xfc,0xff,0x3f,0x00,
++0x1f,0xfc,0xff,0x3f,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
++0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff,0xff,0x3f,0x00,
++0xff,0xff,0xff,0x3f,0x00,0xff,0xff,0xff,0x3f,0x00,0xff,0xff,0xff,0x3f,0x00,
++0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,
++0xff,0xff,0xff,0xff,0x07,0x1f,0xfc,0xff,0x01,0x00,0x1f,0xfc,0xff,0x01,0x00,
++0x1f,0xfc,0xff,0x01,0x00,0x1f,0xfc,0xff,0x01,0x00,0xe0,0xff,0x0f,0x3e,0x00,
++0xe0,0xff,0x0f,0x3e,0x00,0xe0,0xff,0x0f,0x3e,0x00,0xe0,0xff,0x0f,0x3e,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0x1f,0x80,0xff,0x3f,0x00,
++0x1f,0x80,0xff,0x3f,0x00,0x1f,0x80,0xff,0x3f,0x00,0x1f,0x80,0xff,0x3f,0x00,
++0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,
++0xff,0xff,0xff,0xff,0x07,0x1f,0xfc,0xff,0xc1,0x07,0x1f,0xfc,0xff,0xc1,0x07,
++0x1f,0xfc,0xff,0xc1,0x07,0x1f,0xfc,0xff,0xc1,0x07,0xe0,0xff,0xff,0x3f,0x00,
++0xe0,0xff,0xff,0x3f,0x00,0xe0,0xff,0xff,0x3f,0x00,0xe0,0xff,0xff,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0x1f,0x80,0x0f,0xc0,0x07,
++0x1f,0x80,0x0f,0xc0,0x07,0x1f,0x80,0x0f,0xc0,0x07,0x1f,0x80,0x0f,0xc0,0x07,
++0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,
++0xff,0xff,0xff,0xff,0x07,0xff,0x7f,0x00,0xfe,0x07,0xff,0x7f,0x00,0xfe,0x07,
++0xff,0x7f,0x00,0xfe,0x07,0xff,0x7f,0x00,0xfe,0x07,0xff,0x83,0x0f,0xfe,0x07,
++0xff,0x83,0x0f,0xfe,0x07,0xff,0x83,0x0f,0xfe,0x07,0xff,0x83,0x0f,0xfe,0x07,
++0x1f,0xfc,0x0f,0xfe,0x07,0x1f,0xfc,0x0f,0xfe,0x07,0x1f,0xfc,0x0f,0xfe,0x07,
++0x1f,0xfc,0x0f,0xfe,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
++0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff,0x0f,0xfe,0x07,
++0xff,0xff,0x0f,0xfe,0x07,0xff,0xff,0x0f,0xfe,0x07,0xff,0xff,0x0f,0xfe,0x07,
++0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,
++0xff,0xff,0xff,0xff,0x07,0x00,0x00,0xf0,0xc1,0x07,0x00,0x00,0xf0,0xc1,0x07,
++0x00,0x00,0xf0,0xc1,0x07,0x00,0x00,0xf0,0xc1,0x07,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0xff,0x0f,0xc0,0x07,
++0xe0,0xff,0x0f,0xc0,0x07,0xe0,0xff,0x0f,0xc0,0x07,0xe0,0xff,0x0f,0xc0,0x07,
++0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,
++0xff,0xff,0xff,0xff,0x07,0x1f,0x00,0x00,0xc0,0x07,0x1f,0x00,0x00,0xc0,0x07,
++0x1f,0x00,0x00,0xc0,0x07,0x1f,0x00,0x00,0xc0,0x07,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0x1f,0xfc,0x0f,0xc0,0x07,
++0x1f,0xfc,0x0f,0xc0,0x07,0x1f,0xfc,0x0f,0xc0,0x07,0x1f,0xfc,0x0f,0xc0,0x07,
++0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,
++0xff,0xff,0xff,0xff,0x07,0xe0,0xff,0xff,0xff,0x07,0xe0,0xff,0xff,0xff,0x07,
++0xe0,0xff,0xff,0xff,0x07,0xe0,0xff,0xff,0xff,0x07,0xe0,0xff,0xff,0x3f,0x00,
++0xe0,0xff,0xff,0x3f,0x00,0xe0,0xff,0xff,0x3f,0x00,0xe0,0xff,0xff,0x3f,0x00,
++0xe0,0xff,0x0f,0xc0,0x07,0xe0,0xff,0x0f,0xc0,0x07,0xe0,0xff,0x0f,0xc0,0x07,
++0xe0,0xff,0x0f,0xc0,0x07,0xe0,0x03,0xf0,0xff,0x07,0xe0,0x03,0xf0,0xff,0x07,
++0xe0,0x03,0xf0,0xff,0x07,0xe0,0x03,0xf0,0xff,0x07,0x00,0xfc,0xff,0xff,0x07,
++0x00,0xfc,0xff,0xff,0x07,0x00,0xfc,0xff,0xff,0x07,0x00,0xfc,0xff,0xff,0x07,
++0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,
++0xff,0xff,0xff,0xff,0x07,0x1f,0x80,0x0f,0xc0,0x07,0x1f,0x80,0x0f,0xc0,0x07,
++0x1f,0x80,0x0f,0xc0,0x07,0x1f,0x80,0x0f,0xc0,0x07,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0x1f,0x80,0x0f,0xc0,0x07,
++0x1f,0x80,0x0f,0xc0,0x07,0x1f,0x80,0x0f,0xc0,0x07,0x1f,0x80,0x0f,0xc0,0x07,
++0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,0xff,0xff,0xff,0xff,0x07,
++0xff,0xff,0xff,0xff,0x07,0x1f,0x80,0xff,0xc1,0x07,0x1f,0x80,0xff,0xc1,0x07,
++0x1f,0x80,0xff,0xc1,0x07,0x1f,0x80,0xff,0xc1,0x07,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,
++0xe0,0x7f,0xf0,0x3f,0x00,0xe0,0x7f,0xf0,0x3f,0x00,0x1f,0x00,0x00,0xc0,0x07,
++0x1f,0x00,0x00,0xc0,0x07,0x1f,0x00,0x00,0xc0,0x07,0x1f,0x00,0x00,0xc0,0x07
++};
+diff --git a/firmware/SW102/assets/icon_brake.xbm b/firmware/SW102/assets/icon_brake.xbm
+index e2eeb19..8d21664 100644
+--- a/firmware/SW102/assets/icon_brake.xbm
++++ b/firmware/SW102/assets/icon_brake.xbm
+@@ -1,5 +1,6 @@
+-#define icon_brake_width 7
+-#define icon_brake_height 14
++#define icon_brake_width 10
++#define icon_brake_height 12
+ static char icon_brake_bits[] = {
+-  0x00, 0x36, 0x36, 0x49, 0x7F, 0x00, 0x76, 0x76, 0x09, 0x7F, 0x00, 0x77, 
+-  0x6B, 0x1C, };
++0x03,0x03,0x31,0x02,0x78,0x00,0xfc,0x00,0xff,0x03,0x80,0x00,0x80,0x00,0xff,
++0x03,0xfc,0x00,0x78,0x00,0x31,0x02,0x03,0x03
++};
+diff --git a/firmware/SW102/assets/icon_light.xbm b/firmware/SW102/assets/icon_light.xbm
+index 62276f0..87e5d1b 100644
+--- a/firmware/SW102/assets/icon_light.xbm
++++ b/firmware/SW102/assets/icon_light.xbm
+@@ -1,5 +1,6 @@
+-#define icon_light_width 9
+-#define icon_light_height 11
++#define icon_light_width 10
++#define icon_light_height 9
+ static char icon_light_bits[] = {
+-  0x83, 0x01, 0x7D, 0x01, 0xFE, 0x00, 0xFE, 0x00, 0x01, 0x01, 0xFF, 0x01, 
+-  0xFF, 0x01, 0x55, 0x01, 0x55, 0x01, 0x55, 0x01, 0x55, 0x01, };
++0x87,0x03,0x03,0x03,0x31,0x02,0x78,0x00,0x00,0x00,0xff,0x03,0xcc,0x00,0xcc,
++0x00,0xcc,0x00
++};
+diff --git a/firmware/SW102/include/ble_services.h b/firmware/SW102/include/ble_services.h
+index 6889313..a82828d 100644
+--- a/firmware/SW102/include/ble_services.h
++++ b/firmware/SW102/include/ble_services.h
+@@ -2,9 +2,11 @@
+ #ifndef INCLUDE_BLE_SERVICES_H_
+ #define INCLUDE_BLE_SERVICES_H_
+ 
++#include <stdbool.h>
+ #include "state.h"
+ 
+ void ble_init(void);
+ void send_bluetooth(rt_vars_t *rt_vars);
++bool ble_is_connected(void);
+ 
+ #endif /* INCLUDE_BLE_SERVICES_H_ */
+diff --git a/firmware/SW102/include/lcd.h b/firmware/SW102/include/lcd.h
+index b222735..832945c 100644
+--- a/firmware/SW102/include/lcd.h
++++ b/firmware/SW102/include/lcd.h
+@@ -14,13 +14,24 @@
+ void lcd_init(void);
+ void lcd_refresh(void); // Call to flush framebuffer to SPI device
+ void lcd_set_backlight_intensity(uint8_t level);
++/* 180 degree screen rotation (done by the LCD controller, applied on the next lcd_refresh()) */
++void lcd_set_rotated(bool rotated);
+ 
+ extern union framebuffer_t {
+ 	uint8_t u8[128*64/8];
+ 	uint32_t u32[128*64/32];
+ } framebuffer;
+ 
+-static __attribute__((always_inline)) inline void lcd_pset(unsigned int x, unsigned int y, bool v) {
++/* __attribute__((always_inline)) is GCC/Clang syntax (real firmware target)
++ * - MSVC (the only compiler available for the Windows emulator build) fails
++ * to parse it. __forceinline is MSVC's equivalent, same effect. */
++#ifdef _MSC_VER
++#define LCD_ALWAYS_INLINE static __forceinline
++#else
++#define LCD_ALWAYS_INLINE static __attribute__((always_inline)) inline
++#endif
++
++LCD_ALWAYS_INLINE void lcd_pset(unsigned int x, unsigned int y, bool v) {
+ 	if(v)
+ 		framebuffer.u8[x*(128/8) + (y/8)] |= 1<<(y&7);
+ 	else
+diff --git a/firmware/SW102/src/sw102/adc.c b/firmware/SW102/src/sw102/adc.c
+index d486f17..978a461 100644
+--- a/firmware/SW102/src/sw102/adc.c
++++ b/firmware/SW102/src/sw102/adc.c
+@@ -47,8 +47,19 @@ void battery_voltage_init(void)
+ 
+ uint16_t battery_voltage_10x_get()
+ {
+-  // @LowPerformer discovered there is a voltage divider 300k/16k on this input from the 19-48V battery
+-    uint16_t r =  adc_in_milli_volts / 10 * (300 + 16) / 16 / 10;
++  // @LowPerformer discovered there is a voltage divider on this input from the 19-48V battery,
++  // originally measured as 300k/16k on their unit. First real-hardware test on our own unit
++  // (2026-09-14) measured 44.4V displayed vs 58.8V actual (multimeter) on a fully charged 52V/14S
++  // pack - implies the real upper resistor is closer to 402k on this board revision. Corrected
++  // here as the new default; g_bafang_settings.voltage_calibration_steps (menu "Voltage cal.")
++  // exists on top of this for whatever gap remains on a given unit.
++    // Single multiply-then-divide with rounding: this used to be
++    // adc_in_milli_volts / 10 * (402 + 16) / 16 / 10, whose early "/ 10"
++    // (10 mV steps at the ADC pin = ~0.26 V steps at the battery) and second
++    // round-down made the reading coarse and always low by 0-0.26 V, which
++    // showed up as Precise battery-% jumping in ~1.8% steps and reading 1-2
++    // points low (2026-09-25). Same formula, one rounding, 0.1 V steps.
++    uint16_t r = (uint16_t)(((uint32_t)adc_in_milli_volts * (402 + 16) + 800) / 1600);
+ 
+     // Queue a new conversion
+     if (!nrf_adc_is_busy())
+diff --git a/firmware/SW102/src/sw102/ble_services.c b/firmware/SW102/src/sw102/ble_services.c
+index 40aa2f3..934b513 100644
+--- a/firmware/SW102/src/sw102/ble_services.c
++++ b/firmware/SW102/src/sw102/ble_services.c
+@@ -794,6 +794,11 @@ void ble_init(void)
+   APP_ERROR_CHECK(ble_advertising_start(BLE_ADV_MODE_FAST));
+ }
+ 
++bool ble_is_connected(void)
++{
++  return m_conn_handle != BLE_CONN_HANDLE_INVALID;
++}
++
+ void send_bluetooth(rt_vars_t *rt_vars) {
+  static uint8_t data_array[BLE_NUS_MAX_DATA_LEN]; // 19 bytes max
+ 
+diff --git a/firmware/SW102/src/sw102/lcd.c b/firmware/SW102/src/sw102/lcd.c
+index d584201..2870ea8 100644
+--- a/firmware/SW102/src/sw102/lcd.c
++++ b/firmware/SW102/src/sw102/lcd.c
+@@ -110,6 +110,29 @@ void lcd_init(void)
+ static int lcdBacklight = -1; // -1 means unset
+ static int oldBacklight = -1;
+ 
++/* 180 degree rotation done by the SH1107 itself, not by redrawing: segment
++ * remap (0xA0/0xA1) flips the 128-pixel axis, COM scan direction (0xC0/
++ * 0xC8) flips the 64-pixel axis. Nothing about the framebuffer changes.
++ * Requested via lcd_set_rotated() (may be called from anywhere) and
++ * actually sent on the next lcd_refresh(), same deferral as the backlight
++ * above. Both flags start equal (false) so nothing extra is sent at boot.
++ *
++ * LCD_ROT_COM_OFFSET is the display-offset (0xD3) value used while
++ * rotated; the normal one is 0x60 (init_array). Reversing the COM scan can
++ * shift which COM lines the panel shows, so this is a PANEL-SPECIFIC value
++ * - first guess from the SH1107 datasheet (normal window = COM 96..127 +
++ * 0..31; mirrored, the row that was last, COM 31, must come first), to be
++ * confirmed on real hardware. Candidates if the image is shifted: 0x1F,
++ * 0x20, 0x60. */
++#define LCD_ROT_COM_OFFSET 0x1F
++static bool lcdRotated = false;
++static bool oldRotated = false;
++
++void lcd_set_rotated(bool rotated)
++{
++  lcdRotated = rotated;
++}
++
+ /**
+  * @brief Start transfer of frameBuffer to LCD
+  */
+@@ -118,12 +141,30 @@ void lcd_refresh(void)
+   if(lcdBacklight != oldBacklight) {
+     oldBacklight = lcdBacklight;
+ 
+-    uint8_t level = 255 * (100 - lcdBacklight);
++    /* was missing the /100 (see git history) - fixed, then real-hardware
++     * test showed 100%=darkest/20%=brightest: the *original* fork intended
++     * that inversion ("if the user asks for lots of backlight we really
++     * want to dim instead" - see comment above), but that's not the
++     * behaviour we want (higher % should mean brighter) - so no more
++     * "100 - lcdBacklight" here, straight proportional mapping instead. */
++    uint8_t level = 255 * lcdBacklight / 100;
+     uint8_t cmd[] = { 0x81, level };
+ 
+     send_cmd(cmd, sizeof(cmd));
+   }
+ 
++  if(lcdRotated != oldRotated) {
++    oldRotated = lcdRotated;
++
++    uint8_t cmd[] = {
++      lcdRotated ? 0xA1 : 0xA0,                      // segment remap
++      lcdRotated ? 0xC8 : 0xC0,                      // COM scan direction
++      0xD3, lcdRotated ? LCD_ROT_COM_OFFSET : 0x60   // display offset
++    };
++
++    send_cmd(cmd, sizeof(cmd));
++  }
++
+   static uint8_t pagecmd[] = { 0xb0, 0x00, 0x10 };
+ 
+   for (uint8_t i = 0; i < 64; i++)
+diff --git a/firmware/SW102/src/sw102/main.c b/firmware/SW102/src/sw102/main.c
+index b004c5f..e09ccce 100644
+--- a/firmware/SW102/src/sw102/main.c
++++ b/firmware/SW102/src/sw102/main.c
+@@ -25,8 +25,166 @@
+ 
+ #include "ui.h"
+ #include "gfx.h"
++#include "uart_bafang_bridge.h"
++#include "bafang_display.h"
++#include "bafang_ui_bridge.h"
++#include "bafang_settings.h"
++#include "bafang_calibration.h"
++#include "bafang_storage.h"
++#include "bafang_trip.h"
++#include "bafang_energy.h"
++#include "bafang_street_race.h"
+ extern const struct screen screen_boot;
+ 
++/* Bafang protocol/telemetry state machine - see bafang_display.h. Kept
++ * entirely separate from the pre-existing TSDZ2 rt_processing()/state.c
++ * machinery: that path is neutralized (forced into MOTOR_INIT_SIMULATING,
++ * see init_softdevice()/main() below) so it never transmits on the same
++ * wire as this one. */
++static bafang_display_t g_bafang_display;
++
++static void bafang_uart_write(const uint8_t* data, uint8_t len)
++{
++  uart_send_tx_buffer((uint8_t*)data, len);
++}
++
++static void bafang_uart_byte_received(uint8_t byte)
++{
++  bafang_display_on_data_received(&g_bafang_display, &byte, 1);
++}
++
++float bafang_get_current_amps(void)
++{
++  return bafang_display_get_telemetry(&g_bafang_display)->current_amps;
++}
++
++bafang_display_t* bafang_ui_bridge_get_display(void)
++{
++  return &g_bafang_display;
++}
++
++/*
++ * Two-way bridge between our telemetry (independent of the TSDZ2-oriented
++ * ui_vars_t/rt_processing() machinery) and the existing screen_main.c
++ * rendering, which only knows how to read/write ui_vars_t. Read direction
++ * (controller -> screen): speed/brake/battery/power. Write direction
++ * (buttons -> controller): main_button() in screen_main.c already changes
++ * ui_vars.ui8_assist_level on UP/DOWN - mirror it into g_bafang_display so
++ * the chosen level actually reaches the controller. Walk assist
++ * (ui_vars.ui8_walk_assist, set by a long DOWN press) takes priority when
++ * active, matching how the existing UI already treats it as an override.
++ */
++static void bafang_ui_bridge_update(void)
++{
++  /* Apply live settings (menu, see bafang_settings.h) before reading
++   * telemetry, so this tick's speed conversion/current calibration
++   * already reflect any change the user just made. */
++  g_bafang_display.wheel_circumference_m = BAFANG_WHEEL_CIRCUMFERENCE_M[g_bafang_settings.wheel_diameter_index];
++  bafang_display_set_current_calibration(&g_bafang_display, bafang_calibration_factor(g_bafang_settings.calibration_steps));
++
++  const bafang_telemetry_t* t = bafang_display_get_telemetry(&g_bafang_display);
++
++  ui_vars.ui16_wheel_speed_x10 = (uint16_t)(t->speed_kmh * 10.0f + 0.5f);
++  ui_vars.ui8_braking = t->brake_active;
++
++  /* Battery percentage: Standard (default) shows the controller's own
++   * raw byte, unmodified, same as always - untouched by the filter
++   * below, on request (voltage itself also stays raw/unfiltered, only
++   * the Precise percent gets smoothed). Precise recomputes it locally
++   * from our accurately-measured voltage instead - see bafang_settings.h
++   * and bafang_estimate_percent_from_voltage(). Guard: max<=min (e.g.
++   * user hasn't set real values yet, or entered them backwards) falls
++   * back to Standard rather than dividing by zero or showing garbage. */
++  /* filtered_percent/was_precise persist across calls (static, outer
++   * scope) so the filter can tell "just switched into Precise mode"
++   * (re-seed instantly) apart from "was already filtering last tick"
++   * (keep smoothing) - see the comment inside the branch below. */
++  static float filtered_percent;
++  static bool was_precise = false;
++
++  if (g_bafang_settings.battery_percent_precise &&
++      g_bafang_settings.battery_max_voltage_dv > g_bafang_settings.battery_min_voltage_dv)
++  {
++    /* Exponential moving average, ~8s time constant at this function's
++     * 100ms tick rate (alpha = dt/(tau+dt) = 0.1/8.1) - smooths out a
++     * few-second throttle-induced voltage sag so the Precise percent
++     * doesn't visibly jump around, while still fully catching up to a
++     * real, sustained voltage change within ~30-40s (see the
++     * 2026-09-16 battery-% notes for the worked example). Seeds
++     * filtered_percent instantly (skips the averaging) on the tick this
++     * mode is entered - boot, or switching Standard->Precise - so it
++     * never ramps up from a stale/zero value; every tick after that
++     * blends toward the new reading gradually. */
++    float instant_percent = bafang_estimate_percent_from_voltage(t->voltage_v,
++        g_bafang_settings.battery_min_voltage_dv / 10.0f,
++        g_bafang_settings.battery_max_voltage_dv / 10.0f);
++
++    if (!was_precise)
++    {
++      filtered_percent = instant_percent;
++    }
++    else
++    {
++      const float alpha = 0.1f / 8.1f;
++      filtered_percent += alpha * (instant_percent - filtered_percent);
++    }
++    was_precise = true;
++
++    ui8_g_battery_soc = (uint8_t)(filtered_percent + 0.5f);
++  }
++  else
++  {
++    was_precise = false;
++    ui8_g_battery_soc = t->battery_percent;
++  }
++  ui_vars.ui16_battery_voltage_soc_x10 = (uint16_t)(t->voltage_v * 10.0f + 0.5f);
++  ui_vars.ui16_battery_power = (uint16_t)(t->current_amps * t->voltage_v + 0.5f);
++  g_bafang_display.lights_on = ui_vars.ui8_lights;
++
++  /* Brightness: AUTO leaves the existing on/off-brightness behaviour
++   * alone (set_lcd_backlight(), called on the light toggle); MANUAL
++   * overrides it here every tick regardless of light state. */
++  static bool was_auto = true;
++  if (!g_bafang_settings.brightness_auto)
++    lcd_set_backlight_intensity(g_brightness_preview_pct >= 0 ? g_brightness_preview_pct : g_bafang_settings.brightness_manual_pct);
++  else if (!was_auto)
++    set_lcd_backlight(); /* just switched MANUAL -> AUTO: back to the light-dependent level at once */
++  was_auto = g_bafang_settings.brightness_auto;
++
++  bafang_trip_tick(t->speed_kmh, t->current_amps, t->current_amps * t->voltage_v);
++  /* ui8_g_battery_soc, not the raw t->battery_percent - so RANGE tracks
++   * whichever percent is actually on screen (Standard or Precise). The
++   * raw controller byte can read far lower than the real charge level
++   * (see the battery-% notes) and using it here made RANGE
++   * show near-zero while Precise displayed a healthy percent - bug
++   * report 2026-09-17. */
++  bafang_energy_tick(t->speed_kmh, ui8_g_battery_soc, t->voltage_v, t->current_amps, g_bafang_settings.battery_capacity_wh);
++
++  if (ui_vars.ui8_walk_assist)
++  {
++    g_bafang_display.assist_level = BAFANG_ASSIST_PUSH;
++  }
++  else
++  {
++    uint8_t level = ui_vars.ui8_assist_level;
++    if (level > 9)
++    {
++      level = 9;
++    }
++    g_bafang_display.assist_level = (bafang_assist_level_t)level;
++  }
++
++  /* STREET/RACE switch in progress: assist held at 0 for the whole
++   * procedure (see bafang_street_race.c), also against UP presses and walk
++   * assist meanwhile. It stays at 0 afterwards, like in EggSPEED. */
++  if (bafang_street_race_busy())
++  {
++    ui_vars.ui8_assist_level = 0;
++    ui_vars.ui8_walk_assist = 0;
++    g_bafang_display.assist_level = BAFANG_ASSIST_0;
++  }
++}
++
+ /* Variable definition */
+ 
+ /* Buttons */
+@@ -69,6 +227,9 @@ void lcd_power_off(uint8_t updateDistanceOdo)
+ 
+ // save the variables on EEPROM
+   eeprom_write_variables();
++  bafang_storage_save();
++  bafang_energy_save();
++  bafang_trip_extra_save();
+ 
+   // put screen all black and disable backlight
+   clear_all();
+@@ -186,6 +347,26 @@ int main(void)
+   uart_init();
+   battery_voltage_init();
+ 
++  /* Neutralize the pre-existing TSDZ2 protocol state machine (state.c's
++   * rt_processing()/motor_init()) unconditionally, regardless of measured
++   * battery voltage - it must never transmit on the same UART as the
++   * Bafang protocol below. MOTOR_INIT_SIMULATING is the mode that code
++   * already uses for bench-testing without a real controller (see the
++   * comment at state.c's motor_init(): "If we are simulating received
++   * packets never send real packets"), so this is an existing, understood
++   * mode, not a new one. */
++  g_motor_init_state = MOTOR_INIT_SIMULATING;
++
++  bafang_settings_init_defaults();
++  bafang_energy_init_defaults();
++  bafang_street_race_init_defaults();
++
++  bafang_display_init(&g_bafang_display, bafang_uart_write,
++      BAFANG_WHEEL_CIRCUMFERENCE_M[g_bafang_settings.wheel_diameter_index],
++      /* low_battery_protection_v */ 41.0f,
++      /* cell_count */ 13);
++  uart_set_data_callback(bafang_uart_byte_received);
++
+   init_app_timers(); // Must be before ble_init! because it sets app timer prescaler
+ 
+   if(useSoftDevice)
+@@ -193,6 +374,28 @@ int main(void)
+ 
+   /* eeprom_init AFTER ble_init! */
+   eeprom_init();
++  bafang_storage_load(); /* after eeprom_init(): that's what brings up FDS via eeprom_hw_init() */
++  bafang_energy_load();
++  bafang_street_race_load();
++  bafang_trip_extra_restore();
++
++  /* Safety: eeprom_init() above just restored the LAST used assist level
++   * from flash (shared m_eeprom_data mechanism, see eeprom.c) - force it
++   * back to 0 on every power-on regardless, so the bike never unexpectedly
++   * starts at a nonzero assist level without the rider explicitly
++   * re-selecting one. Bug report, 2026-09-17. */
++  ui_vars.ui8_assist_level = 0;
++
++  /* Bafang's real PAS range is 0-9 (see bafang_protocol.h's assist_level_code()) -
++   * ui_vars.ui8_number_of_assist_levels defaults to 20, a TSDZ2-era value (that
++   * motor's UI supports much finer assist grading). Left at 20, UP presses
++   * 10-20 are a dead range: bafang_ui_bridge_update() already clamps the
++   * wire-sent level to 9, so nothing past level 9 does anything - just
++   * wasted clicks. The menu item to change this count (cfg_assist, inherited
++   * from TSDZ2) is currently unreachable from cfgroot (deferred)
++   * - forced here instead of left to a stray/legacy EEPROM
++   * value. Revisit if a menu-editable count is ever wired up. */
++  ui_vars.ui8_number_of_assist_levels = 9;
+ 
+   showScreen(&screen_boot);
+ 
+@@ -289,10 +492,28 @@ static void gui_timer_timeout(void *p_context)
+   if(gui_ticks % (1000 / MSEC_PER_TICK) == 0)
+     ui32_seconds_since_startup++;
+   
+-  if((gui_ticks % (100 / MSEC_PER_TICK) == 0) && // every 100ms
+-      m_rt_processing_stop == false) {
+-    rt_processing();
+-    send_bluetooth(&rt_vars);
++  if(gui_ticks % (100 / MSEC_PER_TICK) == 0) { // every 100ms
++    /* rt_processing()/send_bluetooth(&rt_vars) - deliberately NOT called
++     * here anymore (were until this cleanup pass). Confirmed by direct
++     * code analysis: with g_motor_init_state forced to
++     * MOTOR_INIT_SIMULATING, rt_processing() -> communications() runs
++     * state.c's parse_simmotor(), a fake TSDZ2 motor simulator that
++     * writes random speed/tick data into rt_vars every second; its
++     * output then feeds rt_calc_trips() (also inside rt_processing()),
++     * which OVERWRITES the real trip A fields bafang_trip.c owns - fake
++     * max speed, trip time advancing even while parked (and double-
++     * counting while riding, on top of bafang_trip.c's own +1). This
++     * was never a real no-op despite the old comment here - it actively
++     * corrupted trip telemetry. Nothing else in rt_processing() has any
++     * effect SW102 depends on (see the 2026-09-16 TSDZ2-
++     * leftover survey) - it's dead weight otherwise. send_bluetooth()
++     * only ever streamed those same TSDZ2-simulator fields (pedal
++     * torque/cadence/throttle) over BLE NUS, so it goes with it. */
++
++    bafang_display_set_measured_voltage(&g_bafang_display, battery_voltage_10x_get() / 10.0f * bafang_calibration_factor(g_bafang_settings.voltage_calibration_steps));
++    bafang_display_tick(&g_bafang_display);
++    bafang_street_race_tick();
++    bafang_ui_bridge_update();
+   }
+ }
+ 
+diff --git a/firmware/SW102/src/sw102/screen_boot.c b/firmware/SW102/src/sw102/screen_boot.c
+index c5647e3..4f11a3f 100644
+--- a/firmware/SW102/src/sw102/screen_boot.c
++++ b/firmware/SW102/src/sw102/screen_boot.c
+@@ -2,14 +2,23 @@
+ #include "ui.h"
+ #include "lcd.h"
+ #include "state.h"
++#include "screen_cfg_utils.h"
++#include "firmware_version.h"
+ 
+ const
+ #include "logo.xbm"
+ const
+ #include "logo_anim.xbm"
++const
++#include "logo_eggspeed.xbm"
++const
++#include "icon_skull.xbm"
+ 
+ DEFINE_IMAGE(logo);
+ DEFINE_IMAGE(logo_anim);
++DEFINE_IMAGE(logo_eggspeed); /* static "EggSPEED" wordmark - replaces the
++	spinning bike below on request. logo/logo_anim kept in place, unused. */
++DEFINE_IMAGE(icon_skull);
+ 
+ extern const struct screen screen_main;
+ 
+@@ -33,12 +42,13 @@ static void boot_idle()
+ 	if(tick&3)
+ 		return;
+ 
+-	static int q=1;
+-	fill_rect(0,0,64,69, false);
+-	img_draw(&img_logo, 16, 17);
+-	img_draw_clip(&img_logo_anim, 8, 29, 0, q*18, 18, 18, 0);
+-	q=(q+3)&3;
+-	img_draw_clip(&img_logo_anim, 38, 29, 0, q*18, 18, 18, 0);
++	fill_rect(0,0,64,128, false); /* whole screen - grown again to fit the
++		version string at the bottom, below the logo+skull (moved down
++		5px each on request) */
++	img_draw(&img_logo_eggspeed, (64 - img_logo_eggspeed.w) / 2, 32);
++	img_draw(&img_icon_skull, (64 - img_icon_skull.w) / 2, 52);
++	font_text(&font_full, 32, 104, FIRMWARE_NAME_STRING, AlignCenter);
++	font_text(&font_full, 32, 116, FIRMWARE_VERSION_NUMBER_STRING, AlignCenter);
+ 	lcd_refresh();
+ }
+ 
+diff --git a/firmware/SW102/src/sw102/screen_cfg.c b/firmware/SW102/src/sw102/screen_cfg.c
+index 609325c..a491153 100644
+--- a/firmware/SW102/src/sw102/screen_cfg.c
++++ b/firmware/SW102/src/sw102/screen_cfg.c
+@@ -27,27 +27,6 @@ struct ss_cfg_edit {
+ 	int step, value;
+ };
+ 
+-// this makes sense only if the scroller doesn't use a callback
+-// or the callback returns data consistent with scroller_configtree_get()
+-static void cfg_draw_common(struct scroller_state *sst, const struct scroller_config *cfg, int *edit_value)
+-{
+-	const struct configtree_t * it = scroller_configtree_get(sst, cfg);
+-	int type = it->flags & F_TYPEMASK;
+-	if(type == F_NUMERIC) {
+-		char buf[20];
+-		int y = cfg->winy + 16;
+-		int val = edit_value ? *edit_value : ptr_get(it->ptr);
+-		numeric2string(it->numeric, val, buf, true);
+-		font_text(&font_full, 32, y, buf, AlignCenter | DrawInvert);
+-	}
+-
+-	if(type == F_OPTIONS) {
+-		int y = cfg->winy + 16;
+-		int val = edit_value ? *edit_value : ptr_get(it->ptr);
+-		font_text(&font_full, 32, y, it->options->options[val], AlignCenter | DrawInvert);
+-	}
+-}
+-
+ static void cfg_list_idle(void *_it)
+ {
+ 	struct ss_cfg_list *scr = _it;
+@@ -55,7 +34,12 @@ static void cfg_list_idle(void *_it)
+ 	scroller_draw_list(&scr->sst, scr->cfg);
+ 	scroller_draw_item(&scr->sst, scr->cfg);
+ 
+-	cfg_draw_common(&scr->sst, scr->cfg, NULL);
++	/* No inline value preview while just navigating - the marker doesn't
++	 * cover the row below it any more (see scroller_draw_item()), so a
++	 * preview drawn here would visibly overlap the next list item's
++	 * text. Entering edit mode shows the value instead, as the
++	 * currently-marked entry in its own scrollable list of choices (see
++	 * cfg_edit_idle() below). */
+ }
+ 
+ static void cfg_list_push(const struct scroller_config *it);
+@@ -115,8 +99,13 @@ static void cfg_edit_idle(void *_it)
+ 	struct ss_cfg_edit *scr = _it;
+ 	cfg_button_repeat(true);
+ 	scroller_draw_list(&scr->sst, &scr->cfg);
+-	scroller_draw_item(&scr->parent->sst, scr->parent->cfg);
+-	cfg_draw_common(&scr->parent->sst, scr->parent->cfg, &scr->value);
++	/* Was also drawing the PARENT item's own marker+label+value preview
++	 * here, fixed at the parent's winy/winy+16 - that's the exact same
++	 * screen position the edit list's own currently-centered value sits
++	 * at, so the two just overwrote each other once there was no opaque
++	 * box to hide the collision. The edit list's marker below is enough
++	 * on its own - it already IS the value being chosen. */
++	scroller_draw_item(&scr->sst, &scr->cfg);
+ }
+ 
+ #include <stddef.h>
+@@ -175,7 +164,7 @@ static bool edit_numeric_cb(const struct scroller_config *cfg, int index, const
+ 		return false;
+ 
+ 	if(it) {
+-		numeric2string(owner->item->numeric, v, buf, false);
++		numeric2string(owner->item->numeric, v, buf, true);
+ 		*it = &tmpitem;
+ 	}
+ 
+diff --git a/firmware/SW102/src/sw102/screen_cfg_tree.c b/firmware/SW102/src/sw102/screen_cfg_tree.c
+index ac0826c..3057c27 100644
+--- a/firmware/SW102/src/sw102/screen_cfg_tree.c
++++ b/firmware/SW102/src/sw102/screen_cfg_tree.c
+@@ -2,120 +2,200 @@
+ #include "state.h"
+ #include "eeprom.h"
+ #include "ui.h"
++#include "bafang_settings.h"
++#include "bafang_protocol.h"
++#include "bafang_calibration.h"
++#include "firmware_version.h"
++#include "bafang_trip.h"
++#include "bafang_energy.h"
+ 
+ extern const struct screen screen_main;
++extern const struct screen screen_test;
++
++/*
++ * OEM Bafang menu content (
++ * Unit/Wheel/Password/AutoOff/SpeedLimit/Battery/Info/Reset, from the
++ * official Topology/Converted/CYC manuals), replacing the TSDZ2-specific
++ * config tree this file originally had (torque sensor calibration, motor
++ * control mode, street mode, etc. - none of which apply to a Bafang
++ * controller, which has no display-editable equivalent for most of it).
++ *
++ * Password is deliberately NOT implemented here - it needs a PIN-entry
++ * widget this framework doesn't have yet; follow-up work.
++ *
++ * The framework itself (F_SUBMENU/F_BUTTON/F_NUMERIC/F_OPTIONS, PTRSIZE,
++ * scrollable lists) is unchanged and fully reused - only the item list is
++ * new. cfg_assist/cfg_walk_assist/cfg_calibration/cfg_levels_extend/
++ * cfg_levels_truncate below are NOT touched - screen_cfg.c still
++ * references them externally even though nothing in the new tree links
++ * to them anymore.
++ */
+ 
+-static void do_reset_trip_a(const struct configtree_t *ign);
+-static void do_reset_trip_b(const struct configtree_t *ign);
+-static void do_reset_ble(const struct configtree_t *ign);
+ static void do_reset_all(const struct configtree_t *ign);
+-void cfg_push_assist_screen(const struct configtree_t *ign);
+-void cfg_push_walk_assist_screen(const struct configtree_t *ign);
+-void cfg_push_calibration_screen(const struct configtree_t *ign);
++static void do_info_back(const struct configtree_t *ign);
++static void do_screen_test(const struct configtree_t *ign);
++static void do_trip_reset(const struct configtree_t *ign);
+ 
+-static bool do_set_wh(const struct configtree_t *ign, int wh);
+-static bool do_set_odometer(const struct configtree_t *ign, int wh);
++/* Defined in screen_bas_programming.c - a full custom sub-screen (its own
++ * stack_class), not a plain button action, so it's kept in its own file
++ * rather than inline here like the small ones above. */
++extern void do_open_bas_programming(const struct configtree_t *ign);
+ 
++/* Still used by cfg_walk_assist below, which this file's new menu no
++ * longer references directly but which screen_cfg.c still links against. */
+ static const char *disable_enable[] = { "disable", "enable", 0 };
+-static const char *off_on[] = { "off", "on", 0 };
+-static const char *left_right[] = { "left", "right", 0 };
++
++static const char *wheel_size_labels[] = {
++	"16\"", "17\"", "18\"", "19\"", "20\"", "21\"", "22\"", "23\"",
++	"24\"", "25\"", "26\"", "27\"", "700C", "28\"", "29\"", "30\"", 0
++};
++
++static const char *unit_labels[] = { "km/h", "mph", 0 };
++
++/* Index0 must match brightness_auto==false (MANUAL), index1==true (AUTO) -
++ * F_OPTIONS uses the stored bool's raw 0/1 value directly as the array
++ * index, not as a semantic flag. */
++static const char *brightness_mode_labels[] = { "MANUAL", "AUTO", 0 };
++
++/* false(0)->"OFF", true(1)->"ON" - matches the bool's raw value directly,
++ * no reordering needed (unlike brightness_mode_labels above). */
++static const char *on_off_labels[] = { "OFF", "ON", 0 };
++
++/* false(0)->"Standard" (raw controller byte, unmodified - default),
++ * true(1)->"Precise" (computed locally from measured voltage + user-
++ * entered Min/Max) - matches battery_percent_precise's raw bool value
++ * directly, same convention as on_off_labels above. */
++static const char *battery_percent_mode_labels[] = { "Standard", "Precise", 0 };
++
++/* false(0)->"Type A" (default, current PAS row layout), true(1)->"Type B"
++ * (new layout, see draw_pas_row()) - matches pas_type_b's raw bool value
++ * directly, same convention as the other *_labels arrays above. */
++static const char *pas_type_labels[] = { "Type A", "Type B", 0 };
++
++/* false(0)->"No" (default, unchanged), true(1)->"YES" (draw the PAS digit
++ * as a cut-out inside a filled rectangle - see draw_pas_digit() in
++ * screen_main.c) - matches pas_negative's raw bool value directly, same
++ * convention as the other *_labels arrays above. */
++static const char *no_yes_labels[] = { "No", "YES", 0 };
++
++/* Brightness submenu: "Level" only applies in MANUAL, so in AUTO it isn't
++ * listed at all (index 0 = Mode is always there). */
++static bool brightness_menu_cb(const struct scroller_config *cfg, int index, const struct scroller_item_t **it)
++{
++	if (index >= 1 && g_bafang_settings.brightness_auto)
++		return false;
++	return configtree_scroller_item_callback(cfg, index, it);
++}
++
++/* "Level" edit: the value being scrolled through is applied at once
++ * (preview), the stored setting only changes on confirm, cancel restores. */
++static void brightness_level_preview(const struct configtree_t *it, int value)
++{
++	(void)it;
++	g_brightness_preview_pct = value;
++}
++
++static bool brightness_level_update(const struct configtree_t *it, int value)
++{
++	ptr_set(&it->numeric->ptr, value);
++	g_brightness_preview_pct = -1;
++	return true;
++}
++
++static void brightness_level_revert(const struct configtree_t *it)
++{
++	(void)it;
++	g_brightness_preview_pct = -1;
++}
+ 
+ static const struct configtree_t cfgroot[] = {
+-	{ "Trip memory", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 18, 0, 128, (const struct configtree_t[]) {
+-		{ "Reset trip A", F_BUTTON, .action = do_reset_trip_a },
+-		{ "Reset trip B", F_BUTTON, .action = do_reset_trip_b },
+-		{},
+-	}}},
+-	{ "Wheel", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 36, 0, 128, (const struct configtree_t[]) {
+-		{ "Max speed", F_NUMERIC, .numeric = &(const struct cfgnumeric_t){ PTRSIZE(ui_vars.wheel_max_speed_x10), 1, "km/h", 10, 990, 10 }},
+-		{ "Circumference", F_NUMERIC, .numeric = &(const struct cfgnumeric_t){ PTRSIZE(ui_vars.ui16_wheel_perimeter), 0, "mm", 750, 3000, 10 }},
+-		{},
+-	}}},
+-	{ "Battery", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 36, 0, 128, (const struct configtree_t[]) {
+-		{ "Max current", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_battery_max_current), 0, "A", 1, 20 }},
+- 		{ "Cut-off voltage", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui16_battery_low_voltage_cut_off_x10), 1, "V", 160, 630 }},
+-		{ "Resistance", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui16_battery_pack_resistance_x1000), 0, "mohm", 0, 1000 }},
+-		{ "Voltage", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui16_battery_voltage_soc_x10), 1, "V" }},
+-		{ "Est. resistance", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui16_battery_pack_resistance_estimated_x1000), 0, "mohm" }},
+-		{ "Power loss", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui16_battery_power_loss), 0, "W" }},
+-		{},
+-	}}},
+-	{ "Charge", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 36, 0, 128, (const struct configtree_t[]) {
+-		{ "Display", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_battery_soc_enable), (const char*[]){ "none", "charge %", "voltage", 0 }}},
+-		{ "Reset voltage", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui16_battery_voltage_reset_wh_counter_x10), 1, "V", 160, 630 }},
+-		{ "Total capacity", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui32_wh_x10_100_percent), 1, "Wh", 0, 9990, 100 }},
+-		{ "Used Wh", F_NUMERIC|F_CALLBACK,  .numeric_cb = &(const struct cfgnumeric_cb_t) { { PTRSIZE(ui_vars.ui32_wh_x10), 1, "Wh", 0, 9990, 100 }, do_set_wh }},
+-		{},
+-	}}},
+-	{ "Motor", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 36, 0, 128, (const struct configtree_t[]) {
+-		{ "Motor voltage", F_OPTIONS, .options = &(const struct cfgoptions_t){ PTRSIZE(ui_vars.ui8_motor_type), (const char*[]){ "48V", "36V", 0}}},
+-		{ "Max current", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_motor_max_current), 0, "A", 1, 20 }},
+-		{ "Current ramp", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_ramp_up_amps_per_second_x10), 1, "A", 4, 100 }},
+-		{ "Control mode", F_OPTIONS, .options = &(const struct cfgoptions_t){ PTRSIZE(ui_vars.ui8_motor_current_control_mode), (const char*[]){ "power", "torque", 0}}},
+-		{ "Min current", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_motor_current_min_adc), 0, "steps", 0, 13 }},
+-		{ "Field weakening", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_field_weakening), disable_enable } },
+-		{},
++	{ "Unit", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(g_bafang_settings.use_mph), unit_labels }},
++	{ "Trip reset", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 18, 0, 128, (const struct configtree_t[]) {
++		{ "Confirm trip reset", F_BUTTON, .action = do_trip_reset },
++		{}
+ 	}}},
+-	{ "Torque sensor", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 36, 0, 128, (const struct configtree_t[]) {
+-		{ "ADC Threshold", F_NUMERIC, .numeric = &(const struct cfgnumeric_t){ PTRSIZE(ui_vars.ui8_torque_sensor_adc_threshold), 0, "", 5, 100 }},
+-		{ "Startup assist", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_motor_assistance_startup_without_pedal_rotation), disable_enable }},
+-		{ "Coast brake", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_coast_brake_enable), disable_enable }},
+-		{ "Coast brake ADC", F_NUMERIC, .numeric = &(const struct cfgnumeric_t){ PTRSIZE(ui_vars.ui8_coast_brake_adc), 0, "", 5, 255 }},
+-		{ "Sensor filter", F_NUMERIC, .numeric = &(const struct cfgnumeric_t){ PTRSIZE(ui_vars.ui8_torque_sensor_filter), 0, "", 0, 100 }},
+-		{ "Start pedal ground", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_torque_sensor_calibration_pedal_ground), left_right }},
+-		{ "Calibration", F_SUBMENU, .submenu = &(const struct scroller_config) { 20, 58, 36, 0, 128, (const struct configtree_t[]) {
+-			{ "Use calibration", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_torque_sensor_calibration_feature_enabled), disable_enable }},
+-			{ "Left side", F_BUTTON, .action = cfg_push_calibration_screen },
+-			{ "Right side", F_BUTTON, .action = cfg_push_calibration_screen },
++	{ "Wheel", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(g_bafang_settings.wheel_diameter_index), wheel_size_labels }},
++	/* Deliberately always km/h here, regardless of Unit - this is what
++	 * actually gets sent to the controller over the wire (protocol
++	 * requirement), not just a display choice like the cockpit rows. */
++	{ "Speed limit", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(g_bafang_settings.speed_limit_kph), 0, "km/h", 1, 99 }},
++	/* min bumped from 0 to 1 - 0 would auto-off immediately/constantly,
++	 * with no way to get back into the menu to change it. */
++	{ "Auto power off", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_lcd_power_off_time_minutes), 0, "min", 1, 255 }},
++	{ "Current cal.", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(g_bafang_settings.calibration_steps), 2, "x", BAFANG_CALIBRATION_STEPS_MIN, BAFANG_CALIBRATION_STEPS_MAX }},
++	/* Field calibration for the locally-measured P+ voltage (adc.c) - same
++	 * multiplier pattern as "Current cal." above, kept right next to it. */
++	{ "Voltage cal.", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(g_bafang_settings.voltage_calibration_steps), 2, "x", BAFANG_CALIBRATION_STEPS_MIN, BAFANG_CALIBRATION_STEPS_MAX }},
++	/* Lets the user set/correct the odometer (e.g. migrating from another
++	 * display) - directly on rt_vars.ui32_odometer_x10 (tenths of km,
++	 * already persisted by the existing EEPROM mechanism, same field
++	 * bafang_trip.c increments). screen_cfg.c's button-repeat ramp already
++	 * has a dedicated fast mode for exactly this - see its "Odometer
++	 * setting mode" comment. */
++	/* Deliberately always km here, regardless of Unit - same reasoning as
++	 * "Speed limit" above: this edits the raw stored value directly
++	 * (rt_vars.ui32_odometer_x10, tenths of km - trip/energy calculations
++	 * elsewhere depend on it staying in km), and the menu's numeric
++	 * editor has no support for a runtime-switchable unit/range without
++	 * deeper framework changes. The cockpit's own ODO row still displays
++	 * in miles when mph is selected - only this editor stays km-only. */
++	{ "ODO", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(rt_vars.ui32_odometer_x10), 1, "km", 0, 999999, 10 }}, /* step=10 (tenths) = whole km per click; numeric2string() auto-hides the decimal once step is a multiple of 10 */
++	{ "Battery", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 18, 0, 128, (const struct configtree_t[]) {
++		/* Was read-only Charge%/Voltage (already visible on the main
++		 * screen's top bar) - replaced on request with an editable pack
++		 * capacity, for a future range/remaining-Wh estimator. */
++		{ "Capacity", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(g_bafang_settings.battery_capacity_wh), 0, "Wh", 100, 3000, 10 }},
++		/* Standard vs Precise battery-% source - see bafang_settings.h's
++		 * battery_percent_precise for the full rationale. Max/Min are only
++		 * meaningful once Mode is switched to Precise; entering Max <= Min
++		 * is harmless (main.c's bafang_ui_bridge_update() falls back to
++		 * Standard in that case rather than producing garbage). */
++		{ "Battery percentage", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 18, 0, 128, (const struct configtree_t[]) {
++			{ "Mode", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(g_bafang_settings.battery_percent_precise), battery_percent_mode_labels }},
++			{ "Max Bat. Volt.", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(g_bafang_settings.battery_max_voltage_dv), 1, "V", 100, 990 }},
++			{ "Min Bat. Volt.", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(g_bafang_settings.battery_min_voltage_dv), 1, "V", 100, 990 }},
+ 			{},
+ 		}}},
+ 		{},
+ 	}}},
+-	{ "Assist", F_BUTTON, .action = cfg_push_assist_screen },
+-	{ "Walk assist", F_BUTTON, .action = cfg_push_walk_assist_screen },
+-	{ "Temperature", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 36, 0, 128, (const struct configtree_t[]) {
+-		{ "Temp. sensor", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_temperature_limit_feature_enabled), disable_enable } },
+-		{ "Min limit", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_motor_temperature_min_value_to_limit), 0, "C", 30, 100 }},
+-		{ "Max limit", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_motor_temperature_max_value_to_limit), 0, "C", 30, 100 }},
++	{ "Brightness", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 18, 0, 128, (const struct configtree_t[]) {
++		/* AUTO = existing behaviour unchanged (ui_vars.ui8_lcd_backlight_
++		 * on/off_brightness, switched by the light toggle). MANUAL always
++		 * uses Level regardless of light state - applied every 100ms tick,
++		 * see bafang_ui_bridge_update(). */
++		{ "Mode", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(g_bafang_settings.brightness_auto), brightness_mode_labels }},
++		{ "Level", F_NUMERIC | F_CALLBACK, .numeric_cb = &(const struct cfgnumeric_cb_t) { { PTRSIZE(g_bafang_settings.brightness_manual_pct), 0, "%", 20, 100, 20 }, brightness_level_update, brightness_level_preview, brightness_level_revert }},
++		{},
++	}, brightness_menu_cb }},
++	{ "Cockpit", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 18, 0, 128, (const struct configtree_t[]) {
++		/* Purely cosmetic toggles for main_idle()'s status screen - see
++		 * bafang_settings.h. Both default ON (unchanged look). */
++		{ "Separators", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(g_bafang_settings.show_separators), on_off_labels }},
++		{ "PAS Icons", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(g_bafang_settings.show_pas_bar), on_off_labels }},
++		{ "PAS Type", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(g_bafang_settings.pas_type_b), pas_type_labels }},
++		{ "PAS Negativ", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(g_bafang_settings.pas_negative), no_yes_labels }},
++		/* Saved like the other settings - see bafang_settings.h's screen_rotated. */
++		{ "Rotate Screen 180deg", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(g_bafang_settings.screen_rotated), no_yes_labels }},
+ 		{},
+ 	}}},
+-	{ "Street mode", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 36, 0, 128, (const struct configtree_t[]) {
+-		{ "Feature", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_street_mode_function_enabled), disable_enable } },
+-		{ "Current status", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_street_mode_enabled), off_on } },
+-		{ "At startup", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_street_mode_enabled), (const char*[]){ "no change", "activate", 0 } }},
+-		{ "Hotkey", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_street_mode_hotkey_enabled), disable_enable } },
+-		{ "Speed limit", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_street_mode_speed_limit), 0, "km/h", 1, 99 }},
+-		{ "Power limit", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui16_street_mode_power_limit), 0, "W", 25, 1000, 25 }},
+-		{ "Throttle", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_street_mode_throttle_enabled), disable_enable } },
++	/* Fills the whole display white - dead pixel / bad sector check,
++	 * independent of any specific font/icon rendering. */
++	{ "Screen test", F_BUTTON, .action = do_screen_test },
++	{ "Bafang Assist Level Programming", F_BUTTON, .action = do_open_bas_programming },
++	{ "Info", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 18, 0, 128, (const struct configtree_t[]) {
++		/* Read-only, display-only items: label itself carries the info,
++		 * pressing just goes back - this framework has no plain text
++		 * item type. */
++		{ "FW: " FIRMWARE_VERSION_STRING, F_BUTTON, .action = do_info_back },
++		{ "HW: SW102", F_BUTTON, .action = do_info_back },
++		{ "Dev Tomasz Pieczara", F_BUTTON, .action = do_info_back },
++		{ "spotrobotics.app", F_BUTTON, .action = do_info_back },
+ 		{},
+ 	}}},
+-	{ "Various", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 36, 0, 128, (const struct configtree_t[]) {
+-		{ "Fast stop", F_OPTIONS, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_pedal_cadence_fast_stop), disable_enable } },
+-		{ "Lights current", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_adc_lights_current_offset), 0, "steps", 1, 4 }},
+-		{ "Odometer", F_NUMERIC|F_CALLBACK, .numeric_cb = &(const struct cfgnumeric_cb_t) { { PTRSIZE(ui_vars.ui32_odometer_x10), 1, "km", 0, INT32_MAX-100 }, do_set_odometer }},
+-		{ "Auto power off", F_NUMERIC, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_lcd_power_off_time_minutes), 0, "min", 0, 255 }},
+-		{ "Reset BLE peers", F_BUTTON, .action = do_reset_ble },
+-		{ "Reset all settings", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 18, 0, 128, (const struct configtree_t[]) {
+-			{ "Confirm reset all", F_BUTTON, .action = do_reset_all },
+-			{}
+-		}}},
++	{ "Factory reset", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 18, 0, 128, (const struct configtree_t[]) {
++		{ "Confirm factory reset", F_BUTTON, .action = do_reset_all },
+ 		{}
+ 	}}},
+-	{ "Technical", F_SUBMENU, .submenu = &(const struct scroller_config){ 20, 58, 36, 0, 128, (const struct configtree_t[]) {
+-		{ "ADC battery current", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui16_adc_battery_current), 0, "" }},
+-		{ "ADC throttle sensor", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_adc_throttle), 0, ""}},
+-		{ "Throttle sensor", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_throttle), 0, ""}},
+-		{ "ADC torque sensor", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui16_adc_pedal_torque_sensor), 0, ""}},
+-		{ "Pedal side", F_OPTIONS|F_RO, .options = &(const struct cfgoptions_t) { PTRSIZE(ui_vars.ui8_pas_pedal_right), left_right }},
+-		{ "Weight with offset", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_pedal_weight_with_offset), 0, "kg" }},
+-		{ "Weight", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_pedal_weight), 0, "kg" }},
+-		{ "Cadence", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_pedal_cadence), 0, "rpm" }},
+-		{ "PWM duty-cycle", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_duty_cycle), 0, "" }},
+-		{ "Motor speed", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui16_motor_speed_erps), 0, "" }},
+-		{ "Motor FOC", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_foc_angle), 0, "" }},
+-		{ "Hall sensors", F_NUMERIC|F_RO, .numeric = &(const struct cfgnumeric_t) { PTRSIZE(ui_vars.ui8_motor_hall_sensors), 0, "" }},
+-		{},
+-	}}},
+ 	{}
+ };
+ 
+@@ -164,59 +244,29 @@ const struct scroller_config cfg_calibration = { 20, 26, 36, 0, 76, (const struc
+ 	{ (char[10]){}, F_NUMERIC | F_CALLBACK, .numeric_cb = &(struct cfgnumeric_cb_t) { { { 0, 0 }, 0, "", 0, 1023 }}},
+ }, enumerate_calibration };
+ 
+-static void do_reset_trip_a(const struct configtree_t *ign)
++static void do_info_back(const struct configtree_t *ign)
+ {
+-	// FIXME is accessing rt_vars safe here?
+-	rt_vars.ui32_trip_a_distance_x1000 = 0;
+-	rt_vars.ui32_trip_a_time = 0;
+-	rt_vars.ui16_trip_a_avg_speed_x10 = 0;
+-	rt_vars.ui16_trip_a_max_speed_x10 = 0;
+-	sstack_pop();
+-}
+-
+-static void do_reset_trip_b(const struct configtree_t *ign)
+-{
+-	rt_vars.ui32_trip_b_distance_x1000 = 0;
+-	rt_vars.ui32_trip_b_time = 0;
+-	rt_vars.ui16_trip_b_avg_speed_x10 = 0;
+-	rt_vars.ui16_trip_b_max_speed_x10 = 0;
+-	sstack_pop();
+-}
+-
+-#if defined(NRF51)
+-#include "peer_manager.h"
+-#endif
+-
+-static void do_reset_ble(const struct configtree_t *ign)
+-{
+-#if defined(NRF51)
+-	// TODO: fist disable any connection
+-	// Warning: Use this (pm_peers_delete) function only when not connected or connectable. If a peer is or becomes connected
+-	// or a PM_PEER_DATA_FUNCTIONS function is used during this procedure (until the success or failure event happens),
+-	// the behavior is undefined.
+-	pm_peers_delete();
+-#endif
+ 	sstack_pop();
+ }
+ 
+ static void do_reset_all(const struct configtree_t *ign)
+ {
+ 	eeprom_init_defaults();
++	bafang_settings_init_defaults();
+ 	showScreen(&screen_main);
+ }
+ 
+-static bool do_set_wh(const struct configtree_t *ign, int wh)
++static void do_trip_reset(const struct configtree_t *ign)
+ {
+-	reset_wh();
+-	ui_vars.ui32_wh_x10_offset = wh;
+-	return true;
++	bafang_trip_reset();
++	bafang_energy_reset_trip(); /* keeps "AV" in sync with TRIP - same
++		distance/energy fields it's computed from */
++	showScreen(&screen_main);
+ }
+ 
+-static bool do_set_odometer(const struct configtree_t *ign, int v)
++static void do_screen_test(const struct configtree_t *ign)
+ {
+-	// FIXME rt_vars?
+-	rt_vars.ui32_odometer_x10 = v;
+-	return true;
++	showScreen(&screen_test);
+ }
+ 
+ 
+diff --git a/firmware/SW102/src/sw102/screen_cfg_utils.c b/firmware/SW102/src/sw102/screen_cfg_utils.c
+index 029d8a6..fa5fa12 100644
+--- a/firmware/SW102/src/sw102/screen_cfg_utils.c
++++ b/firmware/SW102/src/sw102/screen_cfg_utils.c
+@@ -10,6 +10,12 @@
+ #include "ui.h"
+ #include <string.h>
+ 
++const
++#include "icon_menu_marker.xbm"
++DEFINE_IMAGE(icon_menu_marker); /* right-pointing arrow, replaces the
++	plain filled rectangle as the "this row is selected" marker in
++	scroller_draw_item() below - see MenuButton.png. */
++
+ static unsigned char stack_storage[256];
+ struct stack_screen *sstack_current;
+ 
+@@ -85,9 +91,15 @@ void sstack_button(int btn, int extra)
+ 
+ const
+ #include "font_full.xbm"
+-DEFINE_FONT(full, 
+-	" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+-	5,7,11,20,26,37,46,48,52,56,62,70,72,76,78,83,90,96,103,110,117,124,131,138,145,152,154,156,165,174,183,189,201,210,217,224,232,239,245,253,261,263,267,274,280,289,297,305,312,320,328,335,343,351,360,372,380,388,396,399,404,407,414,421,424,431,438,444,451,458,463,470,477,479,482,488,490,500,507,514,521,528,533,539,544,551,558,568,575,582,588,594,596,602
++/* Hand-drawn (was rendered from a system font before) - 78 glyphs, see
++ * Narrower
++ * character set than the old font (no #$&'*:;<>@[]^`{|}~ etc.) - only
++ * add what real menu labels actually need. Space is a synthetic empty
++ * glyph (can't be "drawn" as ink) - everything else is pixel-exact from
++ * the template. */
++DEFINE_FONT(full,
++	" !\"%()+,-./0123456789:;=?ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz",
++	6, 8, 12, 20, 23, 26, 32, 34, 40, 42, 48, 53, 57, 62, 67, 72, 77, 82, 87, 92, 97, 99, 101, 107, 112, 117, 122, 127, 132, 136, 140, 145, 150, 152, 157, 162, 167, 173, 179, 185, 190, 195, 200, 205, 209, 214, 220, 226, 232, 238, 243, 248, 254, 259, 264, 269, 274, 278, 283, 288, 290, 294, 299, 303, 309, 314, 319, 324, 330, 334, 338, 342, 347, 353, 359, 365, 370
+ );
+ 
+ int ptr_get(const struct cfgptr_t *it)
+@@ -131,10 +143,13 @@ void numeric2string(const struct cfgnumeric_t *num, int v, char *out, bool inclu
+ 	if(draw_decimals > 0) {
+ 		int div = 1;
+ 		for(int i=0;i<draw_decimals;i++) div*=10;
++		/* zero-padded to draw_decimals digits - "%d" alone dropped the
++		 * leading zero on the fraction (e.g. 1.01 showed as "1.1", same
++		 * width as 1.10, making the list unsortable at a glance) */
+ 		if(include_unit)
+-			sprintf(out, "%d.%d %s", v/div, v%div, num->unit);
++			sprintf(out, "%d.%0*d %s", v/div, draw_decimals, v%div, num->unit);
+ 		else
+-			sprintf(out, "%d.%d", v/div, v%div);
++			sprintf(out, "%d.%0*d", v/div, draw_decimals, v%div);
+ 
+ 	} else {
+ 		if(include_unit)
+@@ -161,6 +176,41 @@ bool configtree_scroller_item_callback(const struct scroller_config *cfg, int in
+ 	return true;
+ }
+ 
++/* All menu rows (context rows above/below the selection, and the
++ * selected row itself) left-justify their text to this x, on request -
++ * previously context rows were centered (AlignCenter, x=32) and the
++ * selected row started at x=8 (marker width + gap). The marker itself
++ * sits at MENU_MARKER_X (below), so it now overlaps this margin by a
++ * pixel or two - accepted as part of the same request. */
++#define MENU_TEXT_X0 11
++#define MENU_MARKER_X 0
++
++/* Same as font_text(..., AlignLeft) but additionally clips off anything
++ * that would land left of left_clip, instead of only clipping at the
++ * screen's own x=0 edge (img_draw_clip's builtin behaviour) - used for
++ * the selected row's horizontal scroll, so overlong text scrolling left
++ * disappears at the menu's left-justification point (MENU_TEXT_X0) rather
++ * than sliding all the way to the physical screen edge. */
++static void font_text_clipped_left(const struct font *fnt, int x, int y, const char *txt, int left_clip)
++{
++	while(*txt) {
++		int cx, l;
++		l = font_getchar(fnt, *txt++, &cx);
++		if(l > 0) {
++			int dx = x, dcx = cx, dl = l;
++			if(dx < left_clip) {
++				int cut = left_clip - dx;
++				dcx += cut;
++				dl -= cut;
++				dx = left_clip;
++			}
++			if(dl > 0)
++				img_draw_clip(fnt->img, dx, y, dcx, 0, dl, fnt->img->h, AlignLeft);
++			x += l;
++		}
++	}
++}
++
+ void scroller_draw_list(struct scroller_state *st, const struct scroller_config *cfg)
+ {
+ 	scroller_item_callback *cb = cfg->cb ? cfg->cb : configtree_scroller_item_callback;
+@@ -179,7 +229,7 @@ void scroller_draw_list(struct scroller_state *st, const struct scroller_config
+ 		if(!cb(cfg, st->cidx + i, &it))
+ 			break;
+ 
+-		font_text(&font_full, 32, y, it->text, AlignCenter);
++		font_text(&font_full, MENU_TEXT_X0, y, it->text, AlignLeft);
+ 	}
+ 
+ 	for(int i=1;;i++){
+@@ -191,7 +241,7 @@ void scroller_draw_list(struct scroller_state *st, const struct scroller_config
+ 		if(!cb(cfg, st->cidx + i, &it))
+ 			break;
+ 
+-		font_text(&font_full, 32, y, it->text, AlignCenter);
++		font_text(&font_full, MENU_TEXT_X0, y, it->text, AlignLeft);
+ 	}
+ }
+ 
+@@ -199,25 +249,37 @@ void scroller_draw_item(struct scroller_state *st, const struct scroller_config
+ {
+ 	scroller_item_callback *cb = cfg->cb ? cfg->cb : configtree_scroller_item_callback;
+ 
+-	// frame for the current selection
+-	fill_rect(0,cfg->winy-2,64,cfg->winh, true);
+-
+ 	const struct scroller_item_t *it;
+ 	if(!cb(cfg, st->cidx, &it)) // oops
+ 		return;
+ 
++	/* Selection marker: right-pointing arrow at the left edge (see
++	 * MenuButton.png) - replaces the old white highlight box + inverted
++	 * text (fill_rect + DrawInvert), which had a rendering glitch
++	 * inherited from the original fork's framework code. */
++	/* was cfg->winy + 1 - marker sat 1px lower than the text it points at
++	 * in every menu tab, on request (2026-09-17). */
++	img_draw(&img_icon_menu_marker, MENU_MARKER_X, cfg->winy);
++
++	const int text_x0 = MENU_TEXT_X0;
++	const int text_area_w = 64 - text_x0;
++
+ 	// current selection, scrolling
+ 	int fl = font_length(&font_full, it->text);
+-	if(fl < 60) { 
+-		st->xscroll = (fl-64)/2;
++	if(fl < text_area_w - 4) {
++		st->xscroll = 0; /* short enough to fit - left-justified, no centering */
+ 	} else {
+-		if(-st->xscroll+fl < 50)
++		if(-st->xscroll+fl < text_area_w-14)
+ 			st->xscroll = -10;
+-		if(!(tick&3)) 
++		if(!(tick&3))
+ 			st->xscroll++;
+ 	}
+-	
+-	font_text(&font_full, -st->xscroll, cfg->winy, it->text, AlignLeft | DrawInvert);
++
++	/* Clip point for scrolling text sits 5px further left than the
++	 * standard justification (MENU_TEXT_X0), on request - text is visible
++	 * a bit longer before disappearing than the plain left-justify point
++	 * would give. */
++	font_text_clipped_left(&font_full, text_x0-st->xscroll, cfg->winy, it->text, MENU_TEXT_X0 - 5);
+ }
+ 
+ int scroller_button(struct scroller_state *st, const struct scroller_config *cfg, int but, int increment)
+diff --git a/firmware/SW102/src/sw102/screen_main.c b/firmware/SW102/src/sw102/screen_main.c
+index b11567e..cab4eaf 100644
+--- a/firmware/SW102/src/sw102/screen_main.c
++++ b/firmware/SW102/src/sw102/screen_main.c
+@@ -3,8 +3,22 @@
+ #include "lcd.h"
+ #include "buttons.h"
+ #include <stdio.h>
++#include <string.h>
+ 
+ #include "state.h"
++#include "bafang_ui_bridge.h"
++#include "bafang_energy.h"
++#include "bafang_settings.h"
++#include "bafang_trip.h"
++#include "bafang_street_race.h"
++#include "screen_cfg_utils.h"
++#include "ble_services.h"
++#include "main.h"
++
++/* Used wherever g_bafang_settings.use_mph is on, to convert an internal
++ * metric value (always stored/transmitted in km, km/h, Wh/km) to its
++ * imperial equivalent purely at the display boundary. */
++#define KM_TO_MILES_FACTOR 0.621371f
+ 
+ const
+ #include "icon_brake.xbm"
+@@ -24,263 +38,822 @@ DEFINE_IMAGE(icon_walk);
+ const
+ #include "icon_light.xbm"
+ DEFINE_IMAGE(icon_light);
+-
+-// fonts based on DejaVu Sans, some hand-modified
++const
++#include "icon_bt.xbm"
++DEFINE_IMAGE(icon_bt);
++const
++#include "icon_walk_pas_1.xbm"
++DEFINE_IMAGE(icon_walk_pas_1);
++const
++#include "icon_walk_pas_2.xbm"
++DEFINE_IMAGE(icon_walk_pas_2); /* two walking poses,
++	alternated every 500ms in draw_pas_row() to animate walk assist -
++	replaces the single static icon_walk_pas frame. Distinct from the
++	pre-existing (unused) icon_walk. */
++
++// font_speed: digits from font_battery (the hand-drawn 7px font), scaled
++// non-uniformly 4x horizontally / 5x vertically per source pixel -> 20x35
++// (12x35 for "1") - replaces the original DSEG7-Classic-Bold render
++// (2026-08-28) for visual consistency with the rest of the cockpit.
++// Carries font_battery's own 1px gap (scaled to 4px) baked into each
++// glyph's width except the last, since this font draws multiple digits
++// side by side (e.g. "24") - unlike the PAS row, which always draws a
++// single centered digit. The decimal point is still
++// drawn separately as a small filled rectangle (see draw_main_speed), not
++// a font glyph.
+ const
+ #include "font_speed.xbm"
+-DEFINE_FONT(speed, ".0123456789", 2, 19, 35, 51, 66, 83, 99, 116, 133, 151);
++DEFINE_FONT(speed, "0123456789", 24, 40, 64, 88, 112, 136, 160, 184, 208);
++
++// font_speed_large: replacement big-speed-digit font (2026-09-03), hand-drawn
++// at native 34px resolution (not a scaled-up font_battery derivative like
++// font_speed above) from an italic-style grid template - 20x34 (12x34 for
++// "1"). font_speed kept in place, unused, in case this doesn't stick.
++//
++const
++#include "font_speed_large.xbm"
++DEFINE_FONT(speed_large, "0123456789", 21, 34, 55, 76, 97, 118, 139, 160, 181);
++
++// font_speed_35: second replacement big-speed-digit font (2026-09-03),
++// hand-drawn at native 35px resolution from a cleaner, uniform-width grid
++// template - 20x35 for every digit including "1" (unlike font_speed_large,
++// whose "1" is narrower). font_speed/font_speed_large both kept in place,
++// unused, in case this doesn't stick either.
++const
++#include "font_speed_35.xbm"
++DEFINE_FONT(speed_35, "0123456789", 20, 40, 60, 80, 100, 120, 140, 160, 180); /* no baked gap - see draw_main_speed() */
++
++// font_speed_small: the fractional speed digit, digits from font_battery
++// scaled 2x horizontally / 3x vertically -> 10x21 (6x21 for "1").
++// Replaces the earlier DSEG7 render, for visual consistency with
++// font_battery/font_speed (font_speed itself uses the same non-uniform
++// 4x/5x scaling idea, just different factors). No trailing gap (unlike
++// font_speed) - draw_main_speed() always draws exactly one fractional
++// digit.
++const
++#include "font_speed_small.xbm"
++DEFINE_FONT(speed_small, "0123456789", 10, 16, 26, 36, 46, 56, 66, 76, 86);
++
++// font_speed_small_v2: replacement fractional-speed-digit font
++// (2026-09-03), hand-drawn at native 21px resolution with EVERY digit,
++// including "1", the same 10px width (unlike font_speed_small, whose "1"
++// is 6px) - fixes the frac digit's width visibly changing depending on its
++// value. font_speed_small kept in place, unused, in case this doesn't
++// stick either.
++const
++#include "font_speed_small_v2.xbm"
++DEFINE_FONT(speed_small_v2, "0123456789", 12, 24, 36, 48, 60, 72, 84, 96, 108);
++
++// font_bigspeed: large 30x56 digit set (2026-09-17), extracted from
++// BIGSPEED.PNG for the second cockpit layout (M short-click toggle, see
++// draw_main_speed_big()) - shows just the whole-number speed as two large
++// digits. Verified through the real img_draw_clip() path - see
++// font_speed_work/test_font_bigspeed.c. Every glyph, including the last,
++// carries the standard 1px trailing gap (see font_odo's comment above for
++// why that matters for AlignRight) - not relied on for spacing here though,
++// draw_main_speed_big() positions each digit with its own manual anchor,
++// same reasoning as draw_main_speed()'s font_speed_35 gap comment.
++const
++#include "font_bigspeed.xbm"
++DEFINE_FONT(bigspeed, "0123456789",
++	31, 62, 93, 124, 155, 186, 217, 248, 279);
+ 
+ const
+ #include "font_2nd.xbm"
+ DEFINE_FONT(2nd, " ./0123456789Whkm", 2, 3, 7, 16, 23, 31, 40, 49, 58, 67, 76, 85, 94, 103, 111, 118);
+ 
++// font_unit: hand-drawn 9px-tall (extends to accommodate "p"'s descender)
++// speed-unit label glyphs - h, k, m, p, extracted from a template the
++// same way as font_battery. Purpose-built to be far narrower than
++// font_2nd for this one label (font_2nd's "km/h"/"kmh"
++// collided with the big speed digits at 2-digit speeds; this cuts label
++// width from 26px to 16px). Chars in ascending ASCII order (h,k,m,p) per
++// font_getchar()'s binary search - each carries a 1px trailing gap except
++// the last (p). NOTE: that gap convention means characters only get
++// correct spacing when drawn in ascending order relative to each other -
++// "kmh" (k<m<h in the string, all non-last alphabetically) works; "kph"
++// would NOT (p has no gap baked in, but isn't last when followed by h).
++const
++#include "font_unit.xbm"
++DEFINE_FONT(unit, "hkmp", 5, 10, 16);
++
++// font_power: power row digits, base font (font_battery digits) scaled
++// uniformly 2x2 -> 10x14 (6x14 for "1"). Draws multiple digits side by
++// side ("1500") like font_speed, so it carries font_battery's own 1px
++// gap (scaled to 2px) baked into each glyph's width except the last. The
++// "W" unit still comes from font_2nd (see draw_power_row) - no letters in
++// this font.
++const
++#include "font_power.xbm"
++DEFINE_FONT(power, "0123456789", 11, 22, 33, 44, 55, 66, 77, 88, 99);
++
++// font_label: hand-drawn 7px-tall letters AND digits for TRIP/ODO/RANGE/
++// AV/AC row labels, numbers, and the "km" unit - V2 (2026-09-02) added a
++// dedicated, narrower digit set (0-9) alongside narrower letters, drawn
++// from a revised template specifically to reclaim space
++// in those rows - font_battery's digits are no longer used there at all.
++// Same height as font_battery (7px) by design, so rows like "TRIP 888km"
++// draw as sequential font_text() calls with a manual gap constant, no
++// composite math needed. Extracted the same way as font_battery/
++// font_unit. Chars in
++// ascending ASCII order (font_getchar()'s binary search): /, 0-9, A, C,
++// D, E, G, I, N, O, P, R, T, V, W, h, k, m (27 total). Each has a 1px
++// trailing gap baked in except the last (m).
++const
++#include "font_label.xbm"
++DEFINE_FONT(label, "/0123456789ACDEGINOPRTVWhkm", 5, 10, 14, 19, 24, 29, 34, 39, 44, 49, 54, 58, 62, 67, 71, 76, 78, 83, 88, 92, 96, 100, 105, 111, 116, 120); /* unchanged from its original extraction - two attempts to merge new glyphs directly into this shared strip corrupted its rendering, so it stays untouched */
++
++// font_il: standalone 2-glyph font ("i","l", from mil.png) for the mile
++// unit labels ("ml"/"Wml") - kept completely separate from font_label
++// rather than merged into it (see above). Verified through the real
++// img_draw_clip() path (not just a Python-side decode) before deploying -
++// see font_speed_work/test_font_il.c.
++const
++#include "font_il.xbm"
++DEFINE_FONT(il, "il", 2);
++
++// font_odo: complete replacement for font_label in the TRIP/ODO/RANGE/AV-AC
++// rows (2026-09-17) - 55 glyphs (much wider character set than font_label's
++// original 27), 11px tall (vs font_label's 7px - most glyphs occupy the
++// same 7px "normal" zone, but the new ">" cockpit icon extends 2px above it
++// and 'p' extends 2px below for its descender). font_label itself is left
++// completely untouched, per the same "never edit the shared font in place"
++// lesson that produced font_il (verified with a test harness
++// through the real img_draw_clip()
++// path, including an explicit regression test for AlignRight text ending in
++// 'p', the highest-ASCII glyph - the exact pattern that corrupted two
++// earlier fonts before every glyph got the same trailing gap). Already
++// includes 'i'/'l' directly, so the font_label+font_il composite this
++// replaces is no longer needed for these rows.
++const
++#include "font_odo.xbm"
++DEFINE_FONT(odo, " !()+,-/0123456789:;>ABCDEFGHIJKLMNOPQRSTUVWXYZ[]hiklmp",
++	4, 6, 9, 12, 16, 18, 22, 27, 32, 36, 41, 46, 51, 56, 61, 66, 71, 76, 78, 80, 88, 92, 97, 101, 106, 110, 114, 119, 124, 126, 130, 135, 139, 145, 150, 155, 159, 164, 168, 173, 177, 182, 188, 194, 198, 202, 207, 210, 213, 218, 220, 224, 226, 232);
++
++/* font_odo is 11px tall (vs font_label's plain 7px) because it also carries
++ * the ">" icon (2px above the normal zone) and 'p' (2px below it). Ordinary
++ * text sits in the font's "normal zone", offset 2px down within its own
++ * glyph canvas, so every font_odo draw call is anchored at (y - FONT_ODO_Y)
++ * to land visible ink at the intended absolute row. */
++#define FONT_ODO_Y 2
++
++// font_battery: hand-drawn 7px-tall replacement (2026-09-02) for the
++// voltage/battery row - extracted pixel-for-pixel from a grid template the
++// user drew. Each glyph carries a 1px trailing gap
++// baked into its own width (except the last, V) - the drawn template had
++// a visible gap between characters, which zero-gap packing (like
++// font_speed/font_2nd) would have lost.
+ const
+ #include "font_battery.xbm"
+-DEFINE_FONT(battery, "%.0123456789V", 5, 7, 12, 17, 22, 27, 32, 37, 42, 47, 52, 57);
++DEFINE_FONT(battery, "%.0123456789V", 8, 10, 16, 20, 26, 32, 38, 44, 50, 56, 62, 68);
++
++/* EggRider-style composite: big integer digits (font_speed, 20x35) + a
++ * small drawn dot at half their height + a small decimal digit
++ * (font_speed_small, 10x21). Not one font at two sizes - this framework
++ * has no such thing - three separate draws, manually positioned. See
++ * The reasoning: the screen is
++ * only 64px wide, doesn't fit any other way) and font size derivation. */
++static void draw_main_speed(ui_vars_t *ui, int y)
++{
++	char int_buf[4], frac_buf[2];
++	/* Stored/transmitted value is always km/h*10 - only converted here,
++	 * at the display boundary, so the underlying telemetry/trip/energy
++	 * numbers never drift from repeated unit toggling. */
++	int speed_x10 = ui->ui16_wheel_speed_x10;
++	if (g_bafang_settings.use_mph)
++		speed_x10 = (int)(speed_x10 * KM_TO_MILES_FACTOR + 0.5f);
++
++	sprintf(int_buf, "%d", speed_x10 / 10);
++	sprintf(frac_buf, "%d", speed_x10 % 10);
++
++	/* Dot and fractional digit are at FIXED screen positions, never computed
++	 * from the integer part's width - centering the whole group (the old
++	 * approach) made the dot/frac/unit visibly jitter left-right as the
++	 * integer part's digit count or width changed, which blurred the
++	 * display in motion. Constants below match the previously-tuned look
++	 * for a 2-digit speed. */
++	const int dot_x = 46;
++	const int frac_x = 51;
++
++	/* The two big digits are drawn SEPARATELY (not as one font_text() call
++	 * on a 2-char string) so each has its own independently adjustable
++	 * anchor - font_speed_35 itself carries no baked inter-glyph gap
++	 * (DEFINE_FONT offsets above are a plain 20px/digit, no +1) precisely
++	 * so this gap is fully manual here, not fighting a font-level default.
++	 * Units digit is right-aligned to end just before the dot (as before);
++	 * tens digit sits exactly digit_gap to its left - since the tens digit
++	 * has no other neighbour, this IS the whole visible gap (a separate
++	 * "nudge the tens digit left" would just add onto it, not be
++	 * independent - learned that the hard way). */
++	const int digit_gap = 2;
++	int units_w = font_length(&font_speed_35, &int_buf[strlen(int_buf) - 1]);
++	int units_x = dot_x - 2 - units_w; /* both big digits nudged 1px left of the dot on request */
++
++	if (strlen(int_buf) > 1) {
++		char tens_buf[2] = { int_buf[0], 0 };
++		int tens_w = font_length(&font_speed_35, tens_buf);
++		int tens_x = units_x - digit_gap - tens_w;
++		font_text(&font_speed_35, tens_x, y, tens_buf, AlignLeft);
++	}
++	font_text(&font_speed_35, units_x, y, &int_buf[strlen(int_buf) - 1], AlignLeft);
+ 
+-#define GRAPH_DEPTH 64
+-struct GraphData {
+-	uint8_t data[GRAPH_DEPTH];
+-};
+-static int graph_head;
+-static struct GraphData graph_speed;
+-static struct GraphData graph_pedal_power;
+-static struct GraphData graph_motor_power;
+-static struct GraphData graph_cadence;
++	fill_rect(dot_x, y + 35 / 2 + 1, 3, 3, true); /* dot, 3x3, centered at half the big digits' height (35px, font_speed_35) */
++
++	font_text(&font_speed_small_v2, frac_x, y, frac_buf, AlignLeft);
+ 
+-static void graph_append(struct GraphData *gd, int v)
++	/* Unit label, bottom-right of the big digits - font_unit (purpose-built,
++	 * see its DEFINE_FONT comment), not font_2nd (too wide, collided with
++	 * the big digits at 2-digit speeds). Already a fixed x, unaffected by
++	 * the jitter bug above. */
++	font_text(&font_unit, 63, y + 35 - font_unit.img->h, g_bafang_settings.use_mph ? "mph" : "kmh", AlignRight); /* both nudged 2px up from the original +2 on request */
++}
++
++/* "Cockpit layout" variant 2 (M short-click toggle, see main_button() and
++ * bafang_settings.h's cockpit_layout_big) - replaces BOTH draw_main_speed()
++ * and draw_power_row() with just the whole-number speed as two large
++ * digits (font_bigspeed), no fraction, no unit label, no power value at
++ * all. Merges what used to be two separate rows/bands into one - caller
++ * (main_idle()) also skips the separator line that used to sit between
++ * them. Digit ink is a fixed 30px wide (BIGSPEED_DIGIT_W) - the font's own
++ * stored width includes the standard 1px gap, not used for spacing here,
++ * same reasoning as draw_main_speed()'s font_speed_35 gap comment: each
++ * digit gets its own independent, manually-placed anchor (tens
++ * conditional, units fixed), not a width-dependent computed gap. First-
++ * pass pixel positions, to be nudged after visual testing. */
++#define BIGSPEED_DIGIT_W 30
++static void draw_main_speed_big(ui_vars_t *ui, int y)
+ {
+-	if(v<0) 
+-		v=0;
+-	if(v>255)
+-		v=255;
+-	gd->data[graph_head] = v;
++	char int_buf[4];
++	int speed_x10 = ui->ui16_wheel_speed_x10;
++	if (g_bafang_settings.use_mph)
++		speed_x10 = (int)(speed_x10 * KM_TO_MILES_FACTOR + 0.5f);
++	sprintf(int_buf, "%d", (speed_x10 + 5) / 10); /* rounded to whole unit - no fractional digit in this layout */
++
++	const int units_x = 32; /* nudged 1px left on request */
++	const int digit_gap = 2;
++
++	if (strlen(int_buf) > 1) {
++		char tens_buf[2] = { int_buf[0], 0 };
++		font_text(&font_bigspeed, units_x - digit_gap - BIGSPEED_DIGIT_W, y, tens_buf, AlignLeft);
++	}
++	font_text(&font_bigspeed, units_x, y, &int_buf[strlen(int_buf) - 1], AlignLeft);
+ }
+ 
+-static void graph_paint(struct GraphData *gd, int x_left, int y_bot, int w, int scale_h, int clip_h)
++/* Row 1 (y=0-10): voltage (left) + battery % (right), both at once - the
++ * old single-value switch (draw_battery_indicator) only ever showed one
++ * of %/V/nothing, matching OEM Bafang; the EggRider-style layout wants
++ * both simultaneously, and drops the little battery icon graphic in
++ * favour of plain text on both sides (see the v2 cockpit
++ * layout). */
++static void draw_top_bar(ui_vars_t *ui)
+ {
+-	int x;
+-	for(x=0; x < w;x++) {
+-		int v = gd->data[(graph_head-w+x+GRAPH_DEPTH) % GRAPH_DEPTH] * scale_h / 256;
+-		if(v < clip_h) {
+-			int vv;
+-			lcd_pset(x + x_left, y_bot - v - 1, true);
+-			for(vv=((x+graph_head)&1);vv<v;vv+=2)
+-				lcd_pset(x + x_left, y_bot - vv - 1, true);
+-		}
++	char buf[10];
++
++	sprintf(buf, "%d.%dV", ui->ui16_battery_voltage_soc_x10 / 10, ui->ui16_battery_voltage_soc_x10 % 10);
++	font_text(&font_battery, 1, 1, buf, AlignLeft);
++
++	sprintf(buf, "%d%%", ui8_g_battery_soc);
++	font_text(&font_battery, 63, 1, buf, AlignRight);
++
++	/* Active STREET/RACE profile, centered in the free gap between voltage
++	 * and percent (~10px there) - only while USE RACE is on. font_odo, as
++	 * font_battery has no letters; its letters are the same 7px height. */
++	if (g_street_race.enabled)
++		font_text(&font_odo, 32, 1 - FONT_ODO_Y,
++			g_street_race.active == BAFANG_PROFILE_RACE ? "R" : "S", AlignCenter);
++}
++
++/* Row 3 (y=49-65): power. Digits are font_power (base font, 2x2) as of
++ * 2026-09-02 - the " W" unit stays font_2nd (font_power has no letters).
++ * "W" sits at a FIXED screen position (see draw_main_speed()'s dot/frac
++ * comment - same jitter problem: centering on the combined width made "W"
++ * visibly slide left-right as the power's digit count changed). The number
++ * is right-aligned to end just before it instead. */
++static void draw_power_row(ui_vars_t *ui, int y)
++{
++	char num_buf[8];
++	sprintf(num_buf, "%d", ui->ui16_battery_power);
++
++	int num_w = font_length(&font_power, num_buf);
++
++	const int num_end_x = 49; /* matches the previously-tuned look for "1500" */
++	const int unit_x = 50;
++
++	font_text(&font_power, num_end_x - num_w + 2, y - 2, num_buf, AlignLeft); /* nudged up + 2px right on request */
++	font_text(&font_2nd, unit_x, y + 2, " W", AlignLeft); /* nudged down + right over several requests */
++}
++
++/* One 4x9px level-bar segment - hollow outline, or filled solid for the
++ * active level. Matches the drawn template's block row exactly (4 grid-cols
++ * wide, 9 grid-rows tall, only ONE of the 10 segments lit at a time - not
++ * a fill-below battery-bar). */
++static void draw_pas_segment(int x, int y, bool filled)
++{
++	const int w = 4, h = 9;
++	if (filled) {
++		fill_rect(x, y, w, h, true);
++	} else {
++		draw_hline(x, x + w, y);
++		draw_hline(x, x + w, y + h - 1);
++		draw_vline(x, y, y + h);
++		draw_vline(x + w - 1, y, y + h);
+ 	}
+ }
+ 
+-enum display_mode_t {
+-	ModeOdometer,
+-	ModeTripDistance,
+-	ModeTripTime,
+-	ModeTripAVS,
+-	ModePedalPower,
+-	ModeMotorPower,
+-	ModeLast,
+-} display_mode;
+-
+-static struct GraphData * const mode_graph[] = {
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	&graph_pedal_power,
+-	&graph_motor_power,
+-};
++/* Draws the PAS number, either normally or - if pas_negative is on - as a
++ * cut-out inside a filled rectangle extending 2px past the digit's own
++ * bounding box on every side ("negative" look, same fill_rect + DrawInvert
++ * trick the old menu selection highlight used, see screen_cfg_utils.c's
++ * history). x0/w are the digit's own left edge and width post-alignment -
++ * both already known at each call site (needed there for the level bar /
++ * icon layout anyway); text_x/align_flags are what font_text itself takes
++ * to reach that same position. font_speed_small_v2 is 21px tall. */
++static void draw_pas_digit(int x0, int y, int w, const char *buf, int text_x, int align_flags, int extra_right)
++{
++	if (g_bafang_settings.pas_negative) {
++		/* w+4, not w+3: right margin was already fixed to 2px (font_speed_
++		 * small_v2's own stored glyph width includes a 1px trailing gap on
++		 * the right, corrected for below) - left margin then got its own
++		 * +1px nudge on request (hardware test, 2026-09-17), hence -3/+4
++		 * instead of -2/+3. */
++		/* extra_right: additional px on the frame's right side - 1 for Type A
++		 * (on request), 0 for Type B. */
++		fill_rect(x0 - 3, y - 2, w + 4 + extra_right, 21 + 4, true);
++		font_text(&font_speed_small_v2, text_x, y, buf, align_flags | DrawInvert);
++	} else {
++		font_text(&font_speed_small_v2, text_x, y, buf, align_flags);
++	}
++}
+ 
+-static void draw_main_speed(ui_vars_t *ui, int y)
++/* count segments starting at level_start (level_start..level_start+count-1),
++ * 1px gap between segments. */
++static void draw_pas_bar_group(int x0, int y, int level_start, int count, int active_level)
+ {
+-	char buf[20];
+-	int speed_x10 = ui->ui16_wheel_speed_x10;
+-	sprintf(buf, "%d.%01d", speed_x10/10, speed_x10 % 10);
+-	font_text(&font_speed, 32, y, buf, AlignCenter);
++	/* Bar-graph style: every segment from level_start up to and including
++	 * the active level is filled (not just the exact active one), e.g.
++	 * PAS 3 lights segments level_start..3. */
++	for (int i = 0; i < count; i++)
++		draw_pas_segment(x0 + i * 5, y, level_start + i <= active_level);
+ }
+ 
+-static void draw_2nd_field(ui_vars_t *ui, int y)
++/* Row 4 (y=64-88): PAS number, flanked by a 10-segment level bar (5 left,
++ * 5 right, only the active level lit) and status icons (light/BT/brake,
++ * each conditional) above the bar - layout
++ * iterated pixel-by-pixel in a simulation before
++ * porting here. Icons and bar deliberately don't share
++ * vertical space (10+9=19 of the digit's 21px height, 2px to spare).
++ *
++ * This is "Type A" - see menu "Cockpit" -> "PAS Type". Type B (below) is
++ * an alternative layout added 2026-09-17. */
++static void draw_pas_row_type_a(ui_vars_t *ui, int y)
+ {
+-	char buf[20];
+-	unsigned m;
+-
+-	switch(display_mode) {
+-	case ModeOdometer:
+-		sprintf(buf, "%d km", ui_vars.ui32_odometer_x10/10);
+-		break;
+-
+-	case ModeTripDistance:
+-		m = ui->ui32_trip_a_distance_x1000;
+-		if(m < 1000) // <0m-999m
+-			sprintf(buf, "%d m", m);
+-		else if(m < 10000) // <1.000km-9.999km
+-			sprintf(buf, "%d.%03d km", m/1000, m % 1000);
+-		else if(m < 100000) // 10.00km-99.99km
+-			sprintf(buf, "%d.%02d km", m/1000, (m/10) % 100);
+-		else if(m < 100000) // 100.0km-999.9km
+-			sprintf(buf, "%d.%01d km", m/1000, (m/100) % 10);
+-		else // 1000km+
+-			sprintf(buf, "%d km", m/1000);
+-		break;
+-
+-	case ModeTripTime:
+-		m = ui->ui32_trip_a_time/60;
+-		if(m < 60 * 99)
+-			sprintf(buf, "%dh %dm", m/60, m % 60);
+-		else
+-			sprintf(buf, "%d h", m/3600);
+-		break;
+-
+-	case ModeTripAVS:
+-		m = ui->ui16_trip_a_avg_speed_x10;
+-		sprintf(buf, "%d.%01d km/h", m/10, m%10);
+-		break;
+-
+-	case ModePedalPower:
+-		m = ui->ui16_pedal_power;
+-		sprintf(buf, "%d W", m);
+-		break;
+-
+-	case ModeMotorPower:
+-		m = ui->ui16_battery_power;
+-		sprintf(buf, "m %dW", m);
+-		break;
+-	default:
+-		buf[0]=0;
++	char buf[4];
++	sprintf(buf, "%d", ui->ui8_assist_level);
++
++	int digit_w = font_length(&font_speed_small_v2, buf);
++	int digit_x0 = 32 - digit_w / 2;
++	int digit_x1 = digit_x0 + digit_w;
++
++	/* Bar-group anchors deliberately stay based on the un-nudged digit_x0/
++	 * digit_x1 below - their own nudges (left -1px, right +4px) are
++	 * independent of the digit's own +1px nudge, not compounded with it. */
++	if (g_bafang_settings.show_pas_bar) {
++		/* No segment for PAS 0 any more, on request - left keeps 5
++		 * segments (levels 1-5), right now only 4 (levels 6-9). */
++		const int bar_group_w = 5 * 4 + 4 * 1; /* left group width unchanged: 5 segments, 4px + 1px gap each */
++		int bar_y = y + 21 - 9;
++		draw_pas_bar_group(digit_x0 - 2 - bar_group_w + 1 - 1, bar_y, 1, 5, ui->ui8_assist_level); /* nudged 1px left on request */
++		draw_pas_bar_group(digit_x1 + 5, bar_y, 6, 4, ui->ui8_assist_level); /* nudged 4px right on request, then 1px more (Type A only) */
+ 	}
+-		
+-	font_text(&font_2nd, 32, y, buf, AlignCenter);
++
++	if (ui->ui8_lights)
++		img_draw(&img_icon_light, 2, y);
++	if (ble_is_connected())
++		img_draw(&img_icon_bt, 42, y); /* nudged 1px right on request */
++	if (ui->ui8_braking)
++		img_draw(&img_icon_brake, 51, y); /* nudged 1px right on request */
++
++	/* Walk assist replaces the digit itself (not the level bars, which
++	 * keep showing the last real assist level - walk assist isn't one of
++	 * the 0-9 levels) with a walking-person icon, same footprint as the
++	 * digit it replaces. */
++	if (ui->ui8_walk_assist) {
++		const struct image *frame = (get_time_base_counter_1ms() / 500) % 2 == 0 ?
++			&img_icon_walk_pas_1 : &img_icon_walk_pas_2;
++		img_draw(frame, (64 - frame->w) / 2 + 1, y + (21 - frame->h) / 2); /* +1px right on request */
++	} else
++		/* digit nudged 1px right on request, independent of the bar
++		 * anchors above (digit_x0+1 keeps the negative-mode rectangle in
++		 * draw_pas_digit() aligned with the actual drawn glyph). */
++		draw_pas_digit(digit_x0 + 2, y, digit_w, buf, 34, AlignCenter, 1); /* nudged right, back left, then right again on request (hardware test) */
+ }
+ 
+-static void draw_battery_indicator(ui_vars_t *ui)
++/* "Type B" - PAS number top-left (font_speed_small_v2, same font as Type
++ * A's digit) with light/BT/brake icons to its right on the same line, and
++ * a row of ">" arrow glyphs (font_odo) along the bottom, one per assist
++ * level (PAS 0 = none, PAS 9 = nine). Arrows use a tight manual stride
++ * (deliberately less than the glyph's own 7px ink width, so at PAS 9 they
++ * overlap rather than overflowing the 64px screen) rather than font_text's
++ * chained AlignLeft advance. Gated by show_pas_bar (the "PAS bar" menu
++ * toggle), same as Type A's rectangle bar - so that setting disables
++ * whichever level indicator the active layout uses. Walk assist replaces
++ * the digit with the walking animation (see below). First-pass pixel
++ * positions, to be nudged after visual testing. */
++#define PAS_ARROW_STRIDE 5
++static void draw_pas_row_type_b(ui_vars_t *ui, int y)
+ {
+-	char buf[10];
+-	int batpx = ui8_g_battery_soc / 5;
+-	img_draw(&img_icon_battery_frame, 0, 1);
+-
+-	img_draw_clip(&img_icon_battery, 0, 1, 0, 0, batpx+3, img_icon_battery.h, 0);
+-
+-	switch (ui_vars.ui8_battery_soc_enable) {
+-	case 0:
+-		break;
+-	case 1:
+-		sprintf(buf, "%d%%", ui8_g_battery_soc);
+-		break;
+-	case 2:
+-		sprintf(buf, "%d.%dV", ui->ui16_battery_voltage_soc_x10/10,  ui->ui16_battery_voltage_soc_x10 % 10);
+-		break;
++	char buf[4];
++	sprintf(buf, "%d", ui->ui8_assist_level);
++	int digit_w = font_length(&font_speed_small_v2, buf);
++
++	/* Walk assist replaces the digit with the same two-pose walking-person
++	 * animation as Type A (500ms per pose), same footprint/anchor as the
++	 * digit it replaces. */
++	if (ui->ui8_walk_assist) {
++		const struct image *frame = (get_time_base_counter_1ms() / 500) % 2 == 0 ?
++			&img_icon_walk_pas_1 : &img_icon_walk_pas_2;
++		/* Per-frame nudges on request (hardware/emulator look): frame 1 at
++		 * x=1, frame 2 (the narrower one, 8px vs 11px) at x=3, both 1px
++		 * lower than plain centering. */
++		bool first = (get_time_base_counter_1ms() / 500) % 2 == 0;
++		img_draw(frame, first ? 2 : 4, y + (21 - frame->h) / 2 + 1); /* both frames +1px right on request */
++	} else
++		draw_pas_digit(3, y, digit_w, buf, 3, AlignLeft, 0); /* nudged 1px right on request */
++
++	/* BT/brake at the same x as Type A's; light 2px to the left of BT
++	 * (Type A's own light position doesn't apply here - Type B's number
++	 * sits where Type A's light icon used to go). */
++	if (ui->ui8_lights)
++		img_draw(&img_icon_light, 30, y);
++	if (ble_is_connected())
++		img_draw(&img_icon_bt, 41, y);
++	if (ui->ui8_braking)
++		img_draw(&img_icon_brake, 50, y);
++
++	if (g_bafang_settings.show_pas_bar) {
++		int ax = 17;
++		int arrow_y = y + 12;
++		for (int i = 0; i < ui->ui8_assist_level && i < 9; i++) {
++			font_text(&font_odo, ax, arrow_y, ">", AlignLeft);
++			ax += PAS_ARROW_STRIDE;
++		}
++	}
++}
++
++static void draw_pas_row(ui_vars_t *ui, int y)
++{
++	if (g_bafang_settings.pas_type_b)
++		draw_pas_row_type_b(ui, y);
++	else
++		draw_pas_row_type_a(ui, y);
++}
++
++/* Rows 5-6 (y=89-99, 99-109): TRIP/ODO distance in whole km - label,
++ * digits, and "km" unit all from font_label (V2 added its own narrower
++ * digit set - font_battery is no longer used here). All three pieces
++ * share the base font's 7px height, so
++ * (unlike draw_main_speed()'s digit+dot+digit stitching) this is just
++ * sequential font_text() calls, now at FIXED column positions (not
++ * per-row centered) on request: labels left-aligned to where ODO's label
++ * used to start (x=4), numbers right-aligned to where ODO's number used
++ * to end (x=49, i.e. right before its old 2px gap to "km"), "km" always
++ * at x=51. These constants were derived from ODO's original centered
++ * layout (label "ODO" + widest expected number "18888" + "km") so ODO's
++ * own row is visually unchanged - only TRIP/RANGE's positions actually
++ * move to line up with it. Real data: rt_vars.ui32_trip_a_distance_x1000
++ * is in METERS despite the name (see bafang_trip.c), rt_vars.ui32_odometer_x10
++ * is already tenths of km - both converted to whole km here. RANGE now
++ * uses this too, fed by bafang_energy.c's estimate (ported from
++ * the EggSPEED app's energy analyzer) - no longer a Python-only
++ * mockup. */
++static void draw_distance_row_str(int y, const char *label, const char *num_buf)
++{
++	int num_w = font_length(&font_odo, num_buf);
++
++	font_text(&font_odo, 1, y - FONT_ODO_Y, label, AlignLeft); /* nudged 2px left on request (font_odo swap) */
++	int num_x0 = g_bafang_settings.use_mph ? 55 : 51; /* mph value nudged 4px right of km's x=51 on request */
++	font_text(&font_odo, num_x0 - num_w, y - FONT_ODO_Y, num_buf, AlignLeft); /* nudged right over several requests */
++	if (g_bafang_settings.use_mph) {
++		/* "ml" - font_odo has both 'm' and 'l' directly now, no more
++		 * compositing with the separate font_il (2026-09-17 - see
++		 * font_odo's DEFINE_FONT comment). Nudged 3px right of "km"'s
++		 * x=53 on request - km layout itself untouched. */
++		font_text(&font_odo, 56, y - FONT_ODO_Y, "ml", AlignLeft);
++	} else {
++		font_text(&font_odo, 53, y - FONT_ODO_Y, "km", AlignLeft); /* nudged right over several requests */
+ 	}
+-	font_text(&font_battery, 62, 3, buf, AlignRight);
+ }
+ 
+-static void draw_power_indicator(ui_vars_t *ui)
++static void draw_distance_row(int y, const char *label, uint32_t km)
+ {
+-	int tmp = ui->ui16_battery_power;
+-	int max_current = ui->ui8_motor_max_current;
+-	if(ui->ui8_battery_max_current > max_current)
+-		max_current = ui->ui8_battery_max_current;
+-
+-	// estimate max. power from current limit & max voltage
+-	int max_power = ui->ui16_battery_voltage_reset_wh_counter_x10 * max_current / 10;
+-	if(tmp > max_power)
+-		tmp = max_power;
+-	tmp = tmp * 99 / max_power;
+-	fill_rect(62, 114 - tmp, 2, tmp, true);
++	char num_buf[8];
++	uint32_t shown = g_bafang_settings.use_mph ? (uint32_t)(km * KM_TO_MILES_FACTOR + 0.5f) : km;
++	sprintf(num_buf, "%u", (unsigned)shown);
++	draw_distance_row_str(y, label, num_buf);
+ }
+ 
+-static void draw_misc_indicators(ui_vars_t *ui)
++/* TRIP alone shows one decimal digit (on request, 2026-09-25), with a comma
++ * - font_odo has no '.' glyph, only ','. ODO and RANGE stay whole numbers.
++ * ui32_trip_a_distance_x1000 is in meters, so /100 = tenths of a km. */
++static void draw_trip_row(int y)
+ {
+-	if(ui->ui8_walk_assist)
+-		img_draw(&img_icon_walk, 0, 119);
+-	if(ui->ui8_braking)
+-		img_draw(&img_icon_brake, 23, 119);
++	uint32_t tenths = rt_vars.ui32_trip_a_distance_x1000 / 100;
++	if (g_bafang_settings.use_mph)
++		tenths = (uint32_t)(tenths * KM_TO_MILES_FACTOR + 0.5f);
++	char num_buf[10];
++	sprintf(num_buf, "%u,%u", (unsigned)(tenths / 10), (unsigned)(tenths % 10));
++	draw_distance_row_str(y, "TRIP", num_buf);
++}
+ 
+-	img_draw(&img_icon_radio, 41, 119);
++static void draw_odo_row(int y)
++{
++	draw_distance_row(y, "ODO", rt_vars.ui32_odometer_x10 / 10);
++}
+ 
+-	if(ui->ui8_lights)
+-		img_draw(&img_icon_light, 53, 118);
++/* Real estimate now (bafang_energy.c, ported from EggSPEED's
++ * energy analyzer) - was a Python-only graphical mockup
++ * with no firmware backing until this energy-consumption tracking existed. */
++static void draw_range_row(int y)
++{
++	draw_distance_row(y, "RANGE", (uint32_t)(g_bafang_energy_estimate.predicted_range_km + 0.5f));
+ }
+ 
+-static void draw_assist_indicator(ui_vars_t *ui)
++/* Row 8 (y=118-128, the band freed up by squeezing rows 5-6): "AV"/"AC"
++ * (avg/actual energy consumption placeholders) + "Wh/km" unit ("Wkm" per
++ * request - font_label doesn't need the "/" here since it wasn't asked
++ * for). All font_label now (V2's own digits, like draw_distance_row()).
++ * Originally "AVG"/"ACT" didn't fit (70px content on a 64px screen, 6px
++ * clipped) - shortened to "AV"/"AC" per request, now 61px, fits with
++ * margin, no clipping (width changed again with V2's narrower digits -
++ * re-check if content is ever lengthened). AV/AC now wired to
++ * bafang_energy.c's real trip-average / short-term Wh/km, same source as
++ * RANGE. */
++static void draw_avg_act_row(int y, float avg_wh_per_km, float act_wh_per_km)
+ {
+-	int bar_height = 100 / ui->ui8_number_of_assist_levels;
+-	int bar_bottom = 14 + ui->ui8_number_of_assist_levels * bar_height;
+-	int bar_fill = bar_height - (bar_height > 16 ? 2 : 1);
+-	int i;
++	char avg_buf[6], act_buf[6]; /* was [4] - overflowed once Wh/mile
++		(~1.6x larger than Wh/km) pushed a borderline value past 3 digits */
++	float avg = g_bafang_settings.use_mph ? avg_wh_per_km / KM_TO_MILES_FACTOR : avg_wh_per_km;
++	float act = g_bafang_settings.use_mph ? act_wh_per_km / KM_TO_MILES_FACTOR : act_wh_per_km;
++	sprintf(avg_buf, "%u", (unsigned)(avg + 0.5f));
++	sprintf(act_buf, "%u", (unsigned)(act + 0.5f));
++
++	/* Each element gets its own fixed x - NOT chained off the previous
++	 * element's font_text() return value any more. Chaining made "AC" and
++	 * act_buf visibly jump left/right depending on how many digits avg_buf
++	 * happened to have that tick (hardware test bug report, 2026-09-17) -
++	 * same jitter problem as draw_main_speed()'s dot/frac and
++	 * draw_power_row()'s "W", fixed the same way: fixed anchors instead of
++	 * a running cursor. First-pass positions, to be nudged. */
++	int y0 = y - FONT_ODO_Y;
++	const int x_av = 1;
++	const int x_avgval = 11; /* right after "AV" - constant, "AV" is always the same width */
++	const int x_ac = 22; /* nudged 2px right on request, then 1px more */
++	const int x_actval = 30; /* nudged 2px right on request (kept fixed anchor, moved with AC), then 1px more */
++	font_text(&font_odo, x_av, y0, "AV", AlignLeft);
++	font_text(&font_odo, x_avgval, y0, avg_buf, AlignLeft);
++	font_text(&font_odo, x_ac, y0, "AC", AlignLeft);
++	font_text(&font_odo, x_actval, y0, act_buf, AlignLeft);
++	/* "Whkm"/"Whml" right-aligned to x=63, matching where "km"/"ml" ends in
++	 * draw_distance_row() - same right edge across all four rows, on
++	 * request. Unit fixed to "Whkm"/"Whml" (was "Wkm"/"Wml" - wrong unit,
++	 * this is Wh/km not W/km). font_odo has 'l' directly now, so this is a
++	 * single AlignRight call again (no more font_label+font_il compositing,
++	 * 2026-09-17). */
++	font_text(&font_odo, 63, y0, g_bafang_settings.use_mph ? "Whml" : "Whkm", AlignRight);
++}
+ 
+-	for(i=0;i < ui->ui8_assist_level;i++) 
+-		fill_rect(0, bar_bottom - bar_height * i - bar_fill, 2, bar_fill, true);
++/* "Variant 3" cockpit layout: a plain list of trip statistics, one per row,
++ * label left-justified and value+unit right-justified, font_full (same font
++ * as the menu) - first test pass, see bafang_settings.h's cockpit_layout.
++ * Labels are deliberately short: the full names (TOTAL TIME, AVG SPEED...)
++ * plus a value don't fit in 64px with font_full (measured widths, e.g. "AVG
++ * SPD"+"25.3km/h" = 76px). Values are km/km/h/Wh-per-km internally and
++ * converted to miles only here, same as the other rows. All values already
++ * include current/voltage calibration (fed from the calibrated telemetry). */
++#define DATA_ROW_COUNT 9
++#define DATA_ROW_PITCH 14 /* 12px font + 2px gap, on request */
++#define DATA_ROW_Y0 2
++
++static void draw_data_row(int i, const char *label, const char *value)
++{
++	int y = DATA_ROW_Y0 + i * DATA_ROW_PITCH;
++	font_text(&font_full, 1, y, label, AlignLeft);
++	font_text(&font_full, 64, y, value, AlignRight);
+ }
+ 
+-static bool draw_fault_states(ui_vars_t *ui)
++/* Two-word label drawn as two pieces so the visible gap between the words
++ * is exactly 2px, on request: every font_full glyph already carries a 1px
++ * blank trailing column, so the second word starts 1 extra px after the
++ * first word's advance width (a plain space would be 6px + that 1px). */
++static void draw_data_row_2w(int i, const char *first, const char *second, const char *value)
+ {
+-	extern const struct font font_full;
+-	const char *e1="FAULT:", *e2 = "";
+-
+-	if(ui->ui8_error_states & 2)
+-		e1="initializing", e2 = "motor";
+-	else if(ui->ui8_error_states & 4)
+-		e1 = "motor",e2="blocked";
+-	else if(ui->ui8_error_states & 8)
+-		e2 = "torque";
+-	else if(ui->ui8_error_states & 16)
+-		e2 = "brake";
+-	else if(ui->ui8_error_states & 32)
+-		e2 = "throttle";
+-	else if(ui->ui8_error_states & 64)
+-		e2 = "speed sns";
+-	else if(ui->ui8_error_states & 128)
+-		e2 = "comm";
+-	else
+-		return false;
++	int y = DATA_ROW_Y0 + i * DATA_ROW_PITCH;
++	int x = 1 + font_length(&font_full, first) + 1;
++	font_text(&font_full, 1, y, first, AlignLeft);
++	font_text(&font_full, x, y, second, AlignLeft);
++	font_text(&font_full, 64, y, value, AlignRight);
++}
+ 
+-	font_text(&font_full, 32, 80, e1, AlignCenter);
+-	font_text(&font_full, 32, 96, e2, AlignCenter);
+-	return true;
++static void fmt_x10(char *out, uint32_t x10, const char *unit)
++{
++	sprintf(out, "%u.%u%s", (unsigned)(x10 / 10), (unsigned)(x10 % 10), unit);
++}
++
++static void fmt_time(char *out, uint32_t seconds)
++{
++	sprintf(out, "%u:%02u", (unsigned)(seconds / 3600), (unsigned)((seconds % 3600) / 60));
++}
++
++static void draw_data_screen(void)
++{
++	char buf[12];
++	const bool mph = g_bafang_settings.use_mph;
++	const float dist_factor = mph ? KM_TO_MILES_FACTOR : 1.0f;
++
++	fmt_x10(buf, (uint32_t)((rt_vars.ui32_trip_a_distance_x1000 / 100) * dist_factor + 0.5f), mph ? "ml" : "km");
++	draw_data_row(0, "TRIP", buf);
++
++	fmt_x10(buf, (uint32_t)(rt_vars.ui16_trip_a_avg_speed_x10 * dist_factor + 0.5f), mph ? "mph" : "km/h");
++	draw_data_row(1, "AVG", buf);
++
++	fmt_x10(buf, (uint32_t)(rt_vars.ui16_trip_a_max_speed_x10 * dist_factor + 0.5f), mph ? "mph" : "km/h");
++	draw_data_row(2, "TOP", buf);
++
++	fmt_time(buf, g_bafang_trip_extra.total_time_s);
++	draw_data_row_2w(3, "TOTAL", "TM", buf);
++
++	fmt_time(buf, rt_vars.ui32_trip_a_time);
++	draw_data_row_2w(4, "MOVE", "TM", buf);
++
++	fmt_x10(buf, g_bafang_trip_extra.max_current_x10, "A");
++	draw_data_row_2w(5, "MAX", "CUR", buf);
++
++	sprintf(buf, "%uW", (unsigned)g_bafang_trip_extra.max_power_w);
++	draw_data_row_2w(6, "MAX", "PWR", buf);
++
++	/* CONS = average consumption over the TRIP shown on this same screen:
++	 * USED / TRIP distance, so the two always agree. Deliberately NOT
++	 * bafang_energy.c's trip average (the AV/AC rows of the other layouts):
++	 * that tracker has its own distance and resets itself on a full
++	 * recharge, which TRIP does not. Below 0.1 km of trip distance the
++	 * quotient is meaningless, so it shows 0. */
++	float trip_km = rt_vars.ui32_trip_a_distance_x1000 / 1000.0f;
++	float wh = trip_km >= 0.1f ? g_bafang_trip_extra.used_wh / trip_km : 0.0f;
++	if (mph)
++		wh /= KM_TO_MILES_FACTOR;
++	sprintf(buf, "%u%s", (unsigned)(wh + 0.5f), mph ? "Wh/ml" : "Wh/km");
++	draw_data_row(7, "CONS", buf);
++
++	/* Energy used since the last "Trip reset" - the data screen's own
++	 * counter (bafang_trip.c), persisted like TRIP. */
++	sprintf(buf, "%uWh", (unsigned)(g_bafang_trip_extra.used_wh + 0.5f));
++	draw_data_row(8, "USED", buf);
++}
++
++/* Safety for the data screen (layout 3): it shows no assist level at all,
++ * so a PAS change there would be invisible. When the level changes while
++ * layout 3 is active the whole screen goes black and just the new level
++ * shows, big and centered, with "PAS" underneath, for 3 seconds - a further
++ * change swaps the digit at once and restarts the 3 seconds. */
++#define PAS_OVERLAY_MS 3000
++static void draw_pas_overlay(int level)
++{
++	char buf[4];
++	sprintf(buf, "%d", level);
++	font_text(&font_bigspeed, 17, 24, buf, AlignLeft); /* 30px digit, centered on the 64px screen */
++	font_text(&font_full, 32, 90, "PAS", AlignCenter);
++}
++
++/* EggRider-style v2 layout:
++ * 7 rows separated by hlines at y=10,49,65,90,102,115 (heights sum to
++ * exactly 128px). Rows 1-4 implemented this pass (voltage/battery,
++ * speed, power, PAS number); rows 5-7 (TRIP/ODO/time) and row 4's icons/
++ * tick marks are deliberately deferred.
++ *
++ * The old layout's graph, fault-state overlay, misc icons, and the
++ * vertical assist/power bars are NOT called here anymore (their fixed
++ * pixel positions belong to the old layout and would visually clash with
++ * the new rows) but are left defined above, unused, rather than deleted -
++ * fault-state display in particular still needs a real home in the new
++ * layout, it hasn't been designed yet. */
++/* STREET/RACE switch gesture: UP and DOWN held together for 3s (user,
++ * 2026-10-29). SW102's buttons.c has no combo events of its own - each
++ * button fires its own long click after 1s - so while both are held their
++ * clicks and long clicks are swallowed in main_button() (no light toggle,
++ * no walk assist, no PAS change) until both are released again. */
++#define SR_HOLD_MS 3000
++#define SR_NOTICE_MS 3000
++static bool sr_up_held, sr_down_held;
++static bool sr_combo;        /* both were held together, not yet both released */
++static bool sr_combo_fired;  /* switch already requested for this hold */
++static uint32_t sr_combo_since_ms;
++
++static void draw_switch_notice(bafang_switch_result_t result)
++{
++	if (result == BAFANG_SWITCH_RESULT_OK) {
++		font_text(&font_full, 32, 50, g_street_race.active == BAFANG_PROFILE_RACE ? "RACE MOD" : "STREET MOD", AlignCenter);
++		font_text(&font_full, 32, 66, "ACTIVE", AlignCenter);
++	} else {
++		font_text(&font_full, 32, 50, "Write", AlignCenter);
++		font_text(&font_full, 32, 66, "error", AlignCenter);
++	}
+ }
+ 
+ static void main_idle()
+ {
+-	char *ptr;
+ 	ui_vars_t *ui = get_ui_vars();
+ 	clear_all();
+ 
+-	if(!(tick&15)){
+-		if (ui->ui16_wheel_speed_x10 > 0) {
+-			graph_append(&graph_speed, ui->ui16_wheel_speed_x10/3); 	// 0- 76
+-			graph_append(&graph_pedal_power, ui->ui16_pedal_power/2);	// 0- 512W
+-			graph_append(&graph_motor_power, ui->ui16_battery_power/4);	// 0-1024W
+-			graph_append(&graph_cadence, ui->ui8_pedal_cadence_filtered);	// 0-255
+-			graph_head=(graph_head+1) % GRAPH_DEPTH;
+-		}
+-	}
++	/* The settings menu edits brightness with a live preview - never let a
++	 * leftover preview value outlive the menu (see bafang_settings.h). */
++	g_brightness_preview_pct = -1;
+ 
+-	if(ui->ui8_street_mode_enabled) {
+-		draw_hline(0, 64, 13);
+-		draw_hline(0, 64, 115);
++	if (sr_combo && sr_up_held && sr_down_held && !sr_combo_fired &&
++		(int32_t)(get_time_base_counter_1ms() - (sr_combo_since_ms + SR_HOLD_MS)) >= 0) {
++		sr_combo_fired = true;
++		bafang_street_race_request_switch(bafang_ui_bridge_get_display());
+ 	}
+ 
+-	draw_battery_indicator(ui);
+-
+-	draw_misc_indicators(ui);
+-	draw_power_indicator(ui);
++	/* Result of a finished switch: whole screen blank with the notice for
++	 * 3s, on every cockpit layout (same style as the data screen's PAS
++	 * overlay below). */
++	static bafang_switch_result_t sr_notice;
++	static uint32_t sr_notice_until_ms;
++	bafang_switch_result_t sr_result = bafang_street_race_take_result();
++	if (sr_result != BAFANG_SWITCH_RESULT_NONE) {
++		sr_notice = sr_result;
++		sr_notice_until_ms = get_time_base_counter_1ms() + SR_NOTICE_MS;
++	}
++	if (sr_notice != BAFANG_SWITCH_RESULT_NONE) {
++		if ((int32_t)(get_time_base_counter_1ms() - sr_notice_until_ms) < 0) {
++			draw_switch_notice(sr_notice);
++			lcd_refresh();
++			return;
++		}
++		sr_notice = BAFANG_SWITCH_RESULT_NONE;
++	}
+ 
+-	draw_assist_indicator(ui);
++	static int last_level = -1;
++	static bool pas_overlay_on = false;
++	static uint32_t pas_overlay_until_ms;
++	uint32_t now_ms = get_time_base_counter_1ms();
++	if (last_level < 0)
++		last_level = ui->ui8_assist_level; /* first frame - nothing to announce */
++	if (ui->ui8_assist_level != last_level) {
++		last_level = ui->ui8_assist_level;
++		if (g_bafang_settings.cockpit_layout == 2) {
++			pas_overlay_on = true;
++			pas_overlay_until_ms = now_ms + PAS_OVERLAY_MS;
++		}
++	}
++	if (g_bafang_settings.cockpit_layout != 2)
++		pas_overlay_on = false;
++
++	if (g_bafang_settings.cockpit_layout == 2) {
++		if (pas_overlay_on && (int32_t)(now_ms - pas_overlay_until_ms) < 0) {
++			draw_pas_overlay(ui->ui8_assist_level);
++		} else {
++			pas_overlay_on = false;
++			draw_data_screen();
++		}
++		lcd_refresh();
++		return;
++	}
+ 
+-	if(mode_graph[display_mode]) {
+-		draw_main_speed(ui, 28);
+-		draw_2nd_field(ui, 65);
++	/* The gap below the top bar (before the y=10 separator) was 2px -
++	 * shrunk to 1px on request (line moved to y=9), and everything below
++	 * cascaded up by that same 1px to match - EXCEPT the last text row
++	 * (draw_avg_act_row), deliberately left at its own y so its band grows
++	 * by 1px instead of shifting. */
++	draw_top_bar(ui);
++	if (g_bafang_settings.cockpit_layout == 1) {
++		/* Variant 2: speed+power rows merged into one big-digit speed
++		 * display - no power row at all, see draw_main_speed_big(). */
++		draw_main_speed_big(ui, 9); /* nudged 1px down on request */
+ 	} else {
+-		draw_2nd_field(ui, 22);
+-		draw_main_speed(ui, 44);
++		draw_main_speed(ui, 11);
++		draw_power_row(ui, 51);
+ 	}
+-
+-	if(!draw_fault_states(ui)) {
+-		struct GraphData *gd = mode_graph[display_mode];
+-		if(!gd) 
+-			gd = &graph_speed;
+-
+-		graph_paint(gd, 3, 114, 58, 50, 114-72);
++	draw_pas_row(ui, 66);
++	/* Rows below PAS squeezed to 9px each (1px gap + 7px text + 1px gap)
++	 * on request, freeing a 4th 9px band - currently empty, content TBD. */
++	draw_trip_row(90);
++	draw_odo_row(100);
++	draw_range_row(110);
++	draw_avg_act_row(120, g_bafang_energy_estimate.trip_avg_wh_per_km,
++		g_bafang_energy_estimate.short_term_wh_per_km);
++
++	if (g_bafang_settings.show_separators) {
++		draw_hline(0, 64, 9); /* gap below top bar shrunk from 2px to 1px on request */
++		if (g_bafang_settings.cockpit_layout != 1)
++			draw_hline(0, 64, 47); /* the line between speed/power - removed in the merged Variant 2 layout */
++		draw_hline(0, 64, 64);
++		draw_hline(0, 64, 88);
++		draw_hline(0, 64, 98);
++		draw_hline(0, 64, 108);
++		draw_hline(0, 64, 118);
+ 	}
++
+ 	lcd_refresh();
+ }
+ 
+@@ -288,6 +861,24 @@ extern const struct screen screen_cfg;
+ static void main_button(int but)
+ {
+ 	ui_vars_t *ui = get_ui_vars();
++
++	/* STREET/RACE gesture - see SR_HOLD_MS. Held state is tracked even
++	 * with the feature off, so the swallowing below behaves the same. */
++	if (but & UP_PRESS) sr_up_held = true;
++	if (but & DOWN_PRESS) sr_down_held = true;
++	if (sr_up_held && sr_down_held && !sr_combo) {
++		sr_combo = true;
++		sr_combo_fired = false;
++		sr_combo_since_ms = get_time_base_counter_1ms();
++		ui_vars.ui8_walk_assist = 0;
++	}
++	if (sr_combo)
++		but &= ~(UP_CLICK | DOWN_CLICK | UP_LONG_CLICK | DOWN_LONG_CLICK);
++	if (but & UP_RELEASE) sr_up_held = false;
++	if (but & DOWN_RELEASE) sr_down_held = false;
++	if (!sr_up_held && !sr_down_held)
++		sr_combo = false;
++
+ 	if(but & UP_CLICK) {
+ 		if(ui->ui8_assist_level < ui->ui8_number_of_assist_levels) 
+ 			ui->ui8_assist_level++;
+@@ -298,32 +889,52 @@ static void main_button(int but)
+ 			ui->ui8_assist_level--;
+ 	}
+ 
+-	if(but & ONOFF_CLICK) {
++	/* Matches real OEM SW102 (button mapping from the
++	 * official manual): UP-long toggles the headlight, DOWN-long is walk
++	 * assist (held only). ONOFF_CLICK (short PWR press) used to do the
++	 * light toggle instead - that was never the OEM gesture, just
++	 * something this fork inherited; PWR now does nothing on short click,
++	 * matching OEM (only long-press power-off is documented). */
++	if(but & UP_LONG_CLICK) {
+ 		ui->ui8_lights = !ui->ui8_lights;
+ 		set_lcd_backlight();
+ 	}
+ 
+-	if((but & UP_LONG_CLICK) && ui->ui8_street_mode_function_enabled) 
+-		ui->ui8_street_mode_enabled =! ui->ui8_street_mode_enabled;
+-
+-	if ((but & DOWN_LONG_CLICK) && ui->ui8_walk_assist_feature_enabled) {
++	/* ui8_walk_assist_feature_enabled used to gate this on a setting only
++	 * reachable through cfg_walk_assist, which isn't linked from cfgroot -
++	 * walk assist could never actually trigger. OEM doesn't require
++	 * "enabling" it as a separate feature either - DOWN-long just works. */
++	if (but & DOWN_LONG_CLICK) {
+ 		ui_vars.ui8_walk_assist = 1;
+ 	}
+ 
+ 	if(but & DOWN_RELEASE)
+ 		ui_vars.ui8_walk_assist = 0;
+ 
+-	if(but & M_CLICK) {
+-		display_mode = (enum display_mode_t)(((int)display_mode + 1) % ModeLast);
++	/* Short M press cycles the cockpit layout (Variant 1 -> 2 -> 3 -> 1, see
++	 * main_idle(), draw_main_speed_big(), draw_data_screen()) - persisted,
++	 * saved along with the rest of g_bafang_settings at power-off (main.c's
++	 * lcd_power_off()), same as every other menu-set option. */
++	if (but & M_CLICK) {
++		g_bafang_settings.cockpit_layout = (g_bafang_settings.cockpit_layout + 1) % BAFANG_COCKPIT_LAYOUT_COUNT;
+ 	}
+-	
++
+ 	if(but & M_LONG_CLICK) {
+ 		// enter cfg screen
+ 		showScreen(&screen_cfg);
+ 	}
+ }
+ 
++/* A release that happens on another screen never reaches main_button() -
++ * forget the held state on leaving so it can't start a false combo later. */
++static void main_leave(void)
++{
++	sr_up_held = sr_down_held = false;
++	sr_combo = false;
++}
++
+ const struct screen screen_main = {
+ 	.idle = main_idle,
+-	.button = main_button
++	.button = main_button,
++	.leave = main_leave
+ };
+diff --git a/firmware/SW102/src/sw102/uart.c b/firmware/SW102/src/sw102/uart.c
+index 5ce4e0b..c0aef5f 100644
+--- a/firmware/SW102/src/sw102/uart.c
++++ b/firmware/SW102/src/sw102/uart.c
+@@ -14,6 +14,7 @@
+ #include "assert.h"
+ #include "app_util_platform.h"
+ #include "app_uart.h"
++#include "uart_bafang_bridge.h"
+ 
+ extern uint32_t _app_uart_init(const app_uart_comm_params_t * p_comm_params,
+     app_uart_buffers_t *     p_buffers,
+@@ -25,6 +26,10 @@ extern uint8_t app_uart_get(void);
+ 
+ /**
+  *@breif UART configuration structure
++ *
++ * Baud rate is 1200 - the standard Bafang display<->controller rate
++ * (confirmed in bbs-fw's extcom.c: uart_open(1200)), not the 19200 used by
++ * the original TSDZ2 protocol this file was written for.
+  */
+ static const app_uart_comm_params_t comm_params =
+ {
+@@ -35,7 +40,7 @@ static const app_uart_comm_params_t comm_params =
+     //Below values are defined in ser_config.h common for application and connectivity
+     .flow_control = APP_UART_FLOW_CONTROL_DISABLED,
+     .use_parity   = false,
+-    .baud_rate    = UART_BAUDRATE_BAUDRATE_Baud19200
++    .baud_rate    = UART_BAUDRATE_BAUDRATE_Baud1200
+ };
+ 
+ uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE];
+@@ -62,75 +67,54 @@ void usart1_reset_received_package(void)
+   ui8_received_package_flag = 0;
+ }
+ 
++/*
++ * Bafang byte pass-through, added alongside the legacy TSDZ2 frame parser
++ * below (kept in place, unmodified, purely so common/src/state.c - shared
++ * with the 850C/860C targets too - keeps compiling against the same
++ * uart_get_rx_buffer_rdy()/uart_get_tx_buffer() API it already calls; that
++ * TSDZ2 path is inert dead code once nothing feeds it real TSDZ2 frames,
++ * not something wired into the Bafang firmware).
++ *
++ * Framing/checksum/opcode logic for the protocol we actually use lives in
++ * bafang_protocol.c / bafang_display.c, not in this driver - this file's
++ * only job is to forward every raw received byte to whoever registered
++ * via uart_set_data_callback().
++ */
++static uart_data_callback_t data_callback = NULL;
++
++void uart_set_data_callback(uart_data_callback_t callback)
++{
++  data_callback = callback;
++}
++
+ void uart_evt_callback(app_uart_evt_t * uart_evt)
+ {
+   uint8_t ui8_byte_received;
+-  static uint8_t ui8_state_machine = 0;
+-  static uint8_t ui8_rx[UART_NUMBER_DATA_BYTES_TO_RECEIVE];
+-  static uint8_t ui8_rx_cnt = 0;
+-  uint8_t ui8_i;
+-  uint16_t ui16_crc_rx;
+ 
+   switch (uart_evt->evt_type)
+   {
+     case APP_UART_DATA:
+       //Data is ready on the UART
+       ui8_byte_received = app_uart_get();
+-      switch (ui8_state_machine)
++
++      if (data_callback != NULL)
+       {
+-        case 0:
+-        if (ui8_byte_received == 0x43) { // see if we get start package byte
+-          ui8_rx[0] = ui8_byte_received;
+-          ui8_state_machine = 1;
+-        }
+-        else {
+-          ui8_state_machine = 0;
+-        }
+-
+-        ui8_rx_cnt = 0;
+-        break;
+-
+-        case 1:
+-          ui8_rx[1] = ui8_byte_received;
+-          ui8_state_machine = 2;
+-        break;
+-
+-        case 2:
+-        ui8_rx[ui8_rx_cnt + 2] = ui8_byte_received;
+-        ++ui8_rx_cnt;
+-
+-        // reset if it is the last byte of the package and index is out of bounds
+-        if (ui8_rx_cnt >= ui8_rx[1])
+-        {
+-          ui8_state_machine = 0;
+-
+-          // just to make easy next calculations
+-          ui16_crc_rx = 0xffff;
+-          for (ui8_i = 0; ui8_i < ui8_rx[1]; ui8_i++)
+-          {
+-            crc16(ui8_rx[ui8_i], &ui16_crc_rx);
+-          }
+-
+-          // if CRC is correct read the package
+-          if (((((uint16_t) ui8_rx[ui8_rx[1] + 1]) << 8) +
+-                ((uint16_t) ui8_rx[ui8_rx[1]])) == ui16_crc_rx)
+-          {
+-            // copy to the other buffer only if we processed already the last package
+-            if(!ui8_received_package_flag)
+-            {
+-              ui8_received_package_flag = 1;
+-
+-              // store the received data to rx_buffer
+-              memcpy(ui8_rx_buffer, ui8_rx, ui8_rx[1] + 2);
+-            }
+-          }
+-        }
+-        break;
+-
+-        default:
+-          ui8_state_machine = 0;
+-          break;
++        data_callback(ui8_byte_received);
+       }
++
++      /* Legacy TSDZ2 frame parser (0x43 start byte + length + CRC16)
++       * removed from here (2026-09-16 TSDZ2-leftover cleanup) - it was
++       * both dead (its only consumer, state.c's communications() via
++       * rt_processing(), is no longer called on SW102 - see main.c) and
++       * a real buffer-overflow hazard: any incoming Bafang byte equal to
++       * 0x43 was mistaken for a frame start, and the next byte was then
++       * trusted as an unchecked length for indexing a fixed 29-byte
++       * buffer, capable of writing far past its end from a single
++       * ordinary telemetry byte. usart1_received_package()/
++       * uart_get_rx_buffer_rdy() below are kept only because state.c
++       * still calls them from that same dead path (shared file, also
++       * compiled for 850C/860C where they're real) - they now simply
++       * never see ui8_received_package_flag set. */
+     break;
+ 
+     case APP_UART_TX_EMPTY:
+@@ -138,7 +122,6 @@ void uart_evt_callback(app_uart_evt_t * uart_evt)
+       break;
+ 
+     case APP_UART_COMMUNICATION_ERROR:
+-        ui8_state_machine = 0;
+       break;
+ 
+     default:
+diff --git a/firmware/SW102/src/sw102/ui.c b/firmware/SW102/src/sw102/ui.c
+index 71af38a..242b7fa 100644
+--- a/firmware/SW102/src/sw102/ui.c
++++ b/firmware/SW102/src/sw102/ui.c
+@@ -1,6 +1,8 @@
+ #include "ui.h"
+ #include "buttons.h"
+ #include "state.h"
++#include "lcd.h"
++#include "bafang_settings.h"
+ 
+ const struct screen *activeScreen;
+ void showScreen(const struct screen *new_screen)
+@@ -21,10 +23,36 @@ void showScreen(const struct screen *new_screen)
+ 
+ void lcd_power_off(uint8_t updateDistanceOdo);
+ int tick;
++
++/* Exchanges every UP event with its DOWN counterpart (and the ONOFF+UP/
++ * ONOFF+DOWN combos) - used while the screen is rotated 180 degrees, when
++ * the physical UP/DOWN buttons are upside down relative to the image. */
++static buttons_events_t swap_up_down(buttons_events_t ev)
++{
++	static const struct { uint32_t up, down; } pairs[] = {
++		{ UP_CLICK, DOWN_CLICK }, { UP_LONG_CLICK, DOWN_LONG_CLICK },
++		{ UP_PRESS, DOWN_PRESS }, { UP_RELEASE, DOWN_RELEASE },
++		{ ONOFFUP_LONG_CLICK, ONOFFDOWN_LONG_CLICK },
++	};
++	buttons_events_t out = ev;
++	for (unsigned i = 0; i < sizeof(pairs) / sizeof(pairs[0]); i++) {
++		out &= ~(pairs[i].up | pairs[i].down);
++		if (ev & pairs[i].up)
++			out |= pairs[i].down;
++		if (ev & pairs[i].down)
++			out |= pairs[i].up;
++	}
++	return out;
++}
++
+ void ui_update()
+ {
+ 	buttons_events_t ev = buttons_get_events();
+ 
++	lcd_set_rotated(g_bafang_settings.screen_rotated);
++	if(g_bafang_settings.screen_rotated)
++		ev = swap_up_down(ev);
++
+ 	if(ev & ONOFF_LONG_CLICK)
+ 		lcd_power_off(0);
+ 
+@@ -41,9 +69,14 @@ void ui_update()
+ 
+ 	if((tick%5)==0) { // this needs to be called every 100ms
+ 		automatic_power_off_management();
+-		rt_processing_stop();
+-		copy_rt_to_ui_vars();
+-		rt_processing_start();
++		/* copy_rt_to_ui_vars() deliberately NOT called here: it copies the
++		 * legacy TSDZ2 rt_vars pipeline into ui_vars, which races with (and
++		 * clobbers) bafang_ui_bridge_update()'s telemetry every 100ms - both
++		 * run because g_motor_init_state is forced to MOTOR_INIT_SIMULATING
++		 * (main.c), which also happens to enable the original fork's fake
++		 * TSDZ2 motor simulator (state.c's parse_simmotor()). That simulator
++		 * still runs harmlessly in the background; it just no longer
++		 * overwrites the real Bafang values in ui_vars. */
+ 		batteryResistance();
+ 	}
+ 	++tick;
+diff --git a/firmware/common/include/utils.h b/firmware/common/include/utils.h
+index 9bbaa16..2d73ba2 100644
+--- a/firmware/common/include/utils.h
++++ b/firmware/common/include/utils.h
+@@ -14,7 +14,7 @@ int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
+ uint8_t ui8_max(uint8_t value_a, uint8_t value_b);
+ uint8_t ui8_min(uint8_t value_a, uint8_t value_b);
+ void crc16(uint8_t ui8_data, uint16_t *ui16_crc);
+-uint8_t* itoa(uint32_t ui32_i);
++uint8_t* bafang_itoa(uint32_t ui32_i); /* renamed from itoa() - conflicts with newlib's itoa() in newer arm-none-eabi-gcc */
+ //void ftoa(float n, char *res, int afterpoint);
+ 
+ #endif /* _UTILS_H */
+diff --git a/firmware/common/src/eeprom.c b/firmware/common/src/eeprom.c
+index 519a6bc..c3c3e99 100644
+--- a/firmware/common/src/eeprom.c
++++ b/firmware/common/src/eeprom.c
+@@ -632,6 +632,17 @@ void eeprom_init_variables(void) {
+ 
+ void eeprom_write_variables(void) {
+ 	ui_vars_t *ui_vars = get_ui_vars();
++#ifdef SW102
++	/* SW102 never runs copy_rt_to_ui_vars() (see bafang_trip.c / the
++	 * bafang_display.c bridge - our own telemetry path writes rt_vars
++	 * directly, not through the TSDZ2 ui_vars mirror), so ui_vars's odo/
++	 * trip fields below are permanently stale/zero on this target. Save
++	 * from rt_vars instead - see the matching load a few hundred lines up
++	 * ("odometer value should reside on RT vars"), which already does
++	 * this for both targets. 850C/860C keep the original ui_vars source,
++	 * unchanged, since copy_rt_to_ui_vars() does run there. */
++	rt_vars_t *rt_vars = get_rt_vars();
++#endif
+ 	m_eeprom_data.ui8_assist_level = ui_vars->ui8_assist_level;
+ 	m_eeprom_data.ui16_wheel_perimeter = ui_vars->ui16_wheel_perimeter;
+ 	m_eeprom_data.ui8_wheel_max_speed =
+@@ -703,7 +714,11 @@ void eeprom_write_variables(void) {
+ 			ui_vars->ui8_offroad_power_limit_enabled;
+ 	m_eeprom_data.ui8_offroad_power_limit_div25 =
+ 			ui_vars->ui8_offroad_power_limit_div25;
++#ifdef SW102
++	m_eeprom_data.ui32_odometer_x10 = rt_vars->ui32_odometer_x10;
++#else
+ 	m_eeprom_data.ui32_odometer_x10 = ui_vars->ui32_odometer_x10;
++#endif
+ 	m_eeprom_data.ui8_walk_assist_feature_enabled =
+ 			ui_vars->ui8_walk_assist_feature_enabled;
+ 	COPY_ARRAY(&m_eeprom_data, ui_vars, ui8_walk_assist_level_factor);
+@@ -828,12 +843,23 @@ void eeprom_write_variables(void) {
+     ui_vars->ui32_trip_a_last_update_time;
+ #endif
+ 
++#ifdef SW102
++  /* Same rt_vars/ui_vars split as the odometer above - bafang_trip.c
++   * writes trip A directly to rt_vars, ui_vars never gets it here. */
++  m_eeprom_data.ui32_trip_a_distance_x1000 =
++      rt_vars->ui32_trip_a_distance_x1000;
++  m_eeprom_data.ui32_trip_a_time =
++      rt_vars->ui32_trip_a_time;
++  m_eeprom_data.ui16_trip_a_max_speed_x10 =
++      rt_vars->ui16_trip_a_max_speed_x10;
++#else
+   m_eeprom_data.ui32_trip_a_distance_x1000 =
+       ui_vars->ui32_trip_a_distance_x1000;
+   m_eeprom_data.ui32_trip_a_time =
+       ui_vars->ui32_trip_a_time;
+   m_eeprom_data.ui16_trip_a_max_speed_x10 =
+       ui_vars->ui16_trip_a_max_speed_x10;
++#endif
+   
+ #ifndef SW102
+   m_eeprom_data.ui8_trip_b_auto_reset =
+diff --git a/firmware/common/src/utils.c b/firmware/common/src/utils.c
+index f839529..6519fb3 100644
+--- a/firmware/common/src/utils.c
++++ b/firmware/common/src/utils.c
+@@ -123,7 +123,7 @@ void crc16(uint8_t ui8_data, uint16_t *ui16_crc) {
+ //}
+ 
+ #define INT_DIGITS 19   /* enough for 64 bit integer */
+-uint8_t* itoa(uint32_t ui32_i) {
++uint8_t* bafang_itoa(uint32_t ui32_i) {
+ 	/* Room for INT_DIGITS digits, - and '\0' */
+ 	static uint8_t buf[INT_DIGITS + 2];
+ 	uint8_t *p = buf + INT_DIGITS + 1; /* points to terminating '\0' */
