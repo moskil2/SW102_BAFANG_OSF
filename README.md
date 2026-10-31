@@ -65,7 +65,7 @@ The simple, end-user version of the flashing procedure - tested on real hardware
 
 - An **ST-Link V2 programmer** (a cheap clone is fine, ~$5) - e.g. [search on Amazon](https://www.amazon.com/s?k=ST-Link+V2+programmer)
 - A Windows PC
-- **OpenOCD** - download the Windows build from the [xPack OpenOCD releases page](https://github.com/xpack-dev-tools/openocd-xpack/releases) (the `...win32-x64.zip` asset) and unzip it anywhere, e.g. `C:\OpenOCD`. The zip contains its own folder, so the `bin` folder ends up in `C:\OpenOCD\xpack-openocd-<version>\bin`
+- **OpenOCD** - download [`xpack-openocd-0.12.0-7-win32-x64.zip`](https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-win32-x64.zip) and unzip it to `C:\OpenOCD`. The zip contains its own folder, so OpenOCD ends up in `C:\OpenOCD\xpack-openocd-0.12.0-7\bin`
 - The **ST-Link driver** (see step 1 below)
 - The firmware `.hex` file: [`SW102_BAF_0.1.5.hex`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.5/SW102_BAF_0.1.5.hex) - download it, create the folder `C:\SW102` and move the downloaded `.hex` there
 
@@ -136,7 +136,7 @@ The blue tape in the photos is just there so the drill doesn't accidentally scra
 ### 3. Flash the firmware
 
 1. Open a Command Prompt: press **Win+R**, type `cmd`, press Enter.
-2. Go into OpenOCD's `bin` folder - adjust the path to where you unzipped it and to your OpenOCD version (see "What you need"):
+2. Go into OpenOCD's `bin` folder (if you unzipped it somewhere else than `C:\OpenOCD`, adjust the path):
    ```
    cd C:\OpenOCD\xpack-openocd-0.12.0-7\bin
    ```
