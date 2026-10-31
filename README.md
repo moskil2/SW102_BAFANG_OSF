@@ -12,6 +12,8 @@ Open source firmware for the Bafang SW102 display, built for genuine Bafang mid-
 |:---:|:---:|:---:|:---:|
 | PAS Type B | Rotated 180 degrees | Menu (top level) | Assist Level Programming |
 
+<img src="screenshots/buttons.png" width="100%" alt="SW102 buttons: what each button does">
+
 ## Compatibility
 
 Uses the standard Bafang UART display protocol - the same protocol the stock display uses across this whole controller family:
