@@ -168,7 +168,7 @@ Once the bootloader is installed (first flash via ST-Link), later firmware updat
 
 ### What you need
 
-- The **nRF Connect** app (Android/iOS, by Nordic Semiconductor)
+- The **nRF Connect** app by Nordic Semiconductor: [Android (Google Play)](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp), [iOS (App Store)](https://apps.apple.com/app/nrf-connect-for-mobile/id1054362403)
 - The firmware update package: [`SW102_BAF_FW_0.1.5.zip`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.5/SW102_BAF_FW_0.1.5.zip) - open the link on your phone and download it there
 
 ### Before updating
