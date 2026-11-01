@@ -53,7 +53,7 @@ These must be two separate commands, run one after the other - see Troubleshooti
 
 ## 4. Check it worked
 
-Disconnect the ST-Link, connect normal power (battery or the controller cable), and press the power button. You should see the boot screen with the firmware name and version.
+Disconnect the ST-Link, connect normal power (battery or the controller cable), and press and hold the power button. You should see the boot screen with the firmware name and version.
 
 ## Troubleshooting
 

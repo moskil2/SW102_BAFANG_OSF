@@ -1,6 +1,6 @@
 # Changelog
 
-Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
+Version history for the `SW102_BAF_X.Y.Z` firmware.
 
 ## 0.1.5 (2026-10-29)
 

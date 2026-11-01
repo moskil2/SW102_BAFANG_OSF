@@ -43,19 +43,18 @@ Tested on real hardware with a BBSHD controller.
 
 - Unit switch (km/h / mph)
 - Wheel size selection
-- Speed limit (sent directly to the controller)
+- Speed limit (stored on the display, not sent to the controller yet)
 - Auto power off timer
 - Current calibration (adjustable display multiplier)
 - Voltage calibration (adjustable display multiplier)
 - ODO (manually set or correct the odometer)
-- Battery submenu: pack capacity (Wh)
+- Battery submenu: pack capacity (Wh) and battery percentage mode: Standard (shows the controller's own reported percentage as-is) or Precise (computes percentage locally from the display's accurately-measured voltage and user-entered max/min battery voltage, smoothed to avoid jumps under load) - for controllers whose own percentage reporting runs low
 - Brightness submenu: manual or automatic mode; in manual mode an adjustable level with live preview (the level entry is only listed in manual mode)
 - Cockpit submenu: toggle separators, toggle the assist-level indicator ("PAS Icons"), choose the assist-level layout ("PAS Type": Type A/B), toggle a negative/cut-out style for the assist-level digit ("PAS Negativ"), turn the whole display upside down ("Rotate Screen 180deg" - UP/DOWN are swapped to match; remembered after power-off)
 - Screen test (fills the display white for a dead-pixel check)
 - Bafang Assist Level Programming: read the controller's per-assist-level (PAS 0-9) current and speed limits, edit them and save them back to the controller. Also holds the STREET/RACE option ("USE RACE"): a second, independent RACE table kept on the display and loaded onto the controller only when you switch to RACE on the cockpit
 - Info submenu: firmware version, hardware, developer credit, website
-- Reset submenu: full factory reset, trip-only reset
-- Battery percentage mode: Standard (shows the controller's own reported percentage as-is) or Precise (computes percentage locally from the display's accurately-measured voltage and user-entered max/min battery voltage, smoothed to avoid jumps under load) - for controllers whose own percentage reporting runs low
+- Trip reset (with confirmation) and Factory reset
 
 ## Installing (ST-Link)
 
@@ -153,7 +152,7 @@ These must be two separate commands, run one after the other - see Troubleshooti
 
 ### 4. Check it worked
 
-Disconnect the ST-Link, connect normal power (battery or the controller cable), and press the power button. You should see the boot screen with the firmware name and version.
+Disconnect the ST-Link, connect normal power (battery or the controller cable), and press and hold the power button. You should see the boot screen with the firmware name and version.
 
 ### Troubleshooting
 
@@ -205,7 +204,7 @@ If you use STREET/RACE, switch to STREET first. A Bluetooth update is meant to k
 </tr>
 </table>
 
-Pixel-accurate cockpit layout simulation (`font_speed_work/simulate_cockpit.py`) using the
+Pixel-accurate cockpit layout simulation using the
 hand-drawn fonts, used to iterate on the UI before touching C code.
 
 ## Status
@@ -229,7 +228,7 @@ RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same f
 
 ## Changelog
 
-Version history for the `SW102_BAF_X.Y.Z` firmware, flashed to real hardware via SWD.
+Version history for the `SW102_BAF_X.Y.Z` firmware.
 
 ### 0.1.5 (2026-10-29)
 
