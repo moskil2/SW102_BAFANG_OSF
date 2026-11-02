@@ -55,6 +55,7 @@ Tested on real hardware with a BBSHD controller.
 - Bafang Assist Level Programming: read the controller's per-assist-level (PAS 0-9) current and speed limits, edit them and save them back to the controller. Also holds the STREET/RACE option ("USE RACE"): a second, independent RACE table kept on the display and loaded onto the controller only when you switch to RACE on the cockpit
 - Info submenu: firmware version, hardware, developer credit, website
 - Trip reset (with confirmation) and Factory reset
+- Statistics (read-only): ODO, average speed, average efficiency, energy used, run time, maximum power and maximum current over the display's lifetime
 
 ## Installing (ST-Link)
 
@@ -229,6 +230,17 @@ RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same f
 ## Changelog
 
 Version history for the `SW102_BAF_X.Y.Z` firmware.
+
+### 0.1.7 (2026-11-02)
+
+- New "Statistics" menu item under "Trip reset": ODO, average speed, average efficiency, energy used, run time, maximum power and maximum current over the display's lifetime. UP/DOWN scrolls, PWR goes back. Cleared only by "Factory reset"; "Trip reset" and editing ODO by hand leave them unchanged. They start from zero after this update
+- Run time counts while the display is on and pauses after 30 minutes without moving
+- ODO, TRIP, energy counters and statistics are now also saved every minute while riding and 30 seconds after stopping. Switching the battery off without powering off the display no longer loses everything since the last save
+
+### 0.1.6 (2026-11-01)
+
+- Assist Level Programming: holding UP or DOWN while editing a CURRENT or SPEED value now repeats the step, starting after 1 second and faster after 3 seconds
+- Switching STREET/RACE now shows "LOADING" with the target profile on the whole screen while the switch runs
 
 ### 0.1.5 (2026-10-29)
 
