@@ -8,7 +8,7 @@ This is the simple, end-user version of the flashing procedure - tested on real 
 - A Windows PC
 - **OpenOCD** - download [`xpack-openocd-0.12.0-7-win32-x64.zip`](https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-win32-x64.zip) and unzip it to `C:\OpenOCD`. The zip contains its own folder, so OpenOCD ends up in `C:\OpenOCD\xpack-openocd-0.12.0-7\bin`
 - The **ST-Link driver** (see step 1 below)
-- The firmware `.hex` file: [`SW102_BAF_0.1.5.hex`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.5/SW102_BAF_0.1.5.hex) - download it, create the folder `C:\SW102` and move the downloaded `.hex` there
+- The firmware `.hex` file: [`SW102_BAF_0.1.9.hex`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.9/SW102_BAF_0.1.9.hex) - download it, create the folder `C:\SW102` and move the downloaded `.hex` there
 
 This single `.hex` file is a complete, ready-to-flash image - it already contains the bootloader, the Nordic SoftDevice (BLE stack), and the application, merged together at build time. You don't need to download anything else from any other repository.
 
@@ -46,7 +46,7 @@ You can power the display straight from the ST-Link's 3.3V pin for flashing - no
    ```
 4. Run the write-and-verify command (paste it exactly, then press Enter). If you saved the `.hex` somewhere other than `C:\SW102`, change the path, and write it with `/`, not `\` (OpenOCD drops `\`, so `C:\SW102\...` would not be found):
    ```
-   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; flash write_image C:/SW102/SW102_BAF_0.1.5.hex; verify_image C:/SW102/SW102_BAF_0.1.5.hex; reset halt; resume; shutdown"
+   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; flash write_image C:/SW102/SW102_BAF_0.1.9.hex; verify_image C:/SW102/SW102_BAF_0.1.9.hex; reset halt; resume; shutdown"
    ```
 
 These must be two separate commands, run one after the other - see Troubleshooting below for why. If `verify_image` reports no errors, the flash succeeded.
@@ -70,7 +70,7 @@ Once the bootloader is installed (first flash via ST-Link), later firmware updat
 ### What you need
 
 - The **nRF Connect** app by Nordic Semiconductor: [Android (Google Play)](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp), [iOS (App Store)](https://apps.apple.com/app/nrf-connect-for-mobile/id1054362403)
-- The firmware update package: [`SW102_BAF_FW_0.1.5.zip`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.5/SW102_BAF_FW_0.1.5.zip) - open the link on your phone and download it there
+- The firmware update package: [`SW102_BAF_FW_0.1.9.zip`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.9/SW102_BAF_FW_0.1.9.zip) - open the link on your phone and download it there
 
 ### Before updating
 

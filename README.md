@@ -211,7 +211,7 @@ hand-drawn fonts, used to iterate on the UI before touching C code.
 
 ## Status
 
-Firmware tested on real hardware (flashed via SWD/OpenOCD and an ST-Link V2, current version `SW102_BAF_0.1.5`). Working on hardware: Bafang UART protocol (telemetry, lights, assist), current and voltage calibration, trip/odo with reset, km/h<->mph unit switch, cockpit layouts and data screen, Assist Level Programming, STREET/RACE profiles, menu with a marker icon instead of highlight, boot screen with version number. Versioning convention: `SW102_BAF_X.Y.Z`, each version flashed to hardware is saved as its own `.hex` file (never overwritten). Builds cleanly on both toolchains (ARM and emulator). Details and history in `CHANGELOG.md`.
+Firmware tested on real hardware up to `SW102_BAF_0.1.8` (flashed via SWD/OpenOCD and an ST-Link V2). Current version `SW102_BAF_0.1.9`, not yet tested on hardware. Working on hardware: Bafang UART protocol (telemetry, lights, assist), current and voltage calibration, trip/odo with reset, km/h<->mph unit switch, cockpit layouts and data screen, Assist Level Programming, STREET/RACE profiles, menu with a marker icon instead of highlight, boot screen with version number. Versioning convention: `SW102_BAF_X.Y.Z`, each version flashed to hardware is saved as its own `.hex` file (never overwritten). Builds cleanly on both toolchains (ARM and emulator). Details and history in `CHANGELOG.md`.
 
 ## License and provenance
 
@@ -219,12 +219,12 @@ Licensed under GPL-3.0 (see `source/LICENSE`). Based on [`anszom/SW102_LCD`](htt
 
 ## Resources
 
-Current build (v0.1.5) flash/RAM usage on the nRF51822:
+Current build (v0.1.9) flash/RAM usage on the nRF51822:
 
 | Resource | Budget | Used | Free |
 |---|---|---|---|
-| Flash (application region) | 130,048 B (127.0 KB) | 62,648 B (61.2 KB) | 67,400 B (65.8 KB, 51.8%) |
-| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,416 B (6.3 KB) | 15,088 B (14.7 KB, 70.2%) |
+| Flash (application region) | 130,048 B (127.0 KB) | 66,520 B (65.0 KB) | 63,528 B (62.0 KB, 48.9%) |
+| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,864 B (6.7 KB) | 14,640 B (14.3 KB, 68.1%) |
 
 RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same free space, not counted separately.
 
