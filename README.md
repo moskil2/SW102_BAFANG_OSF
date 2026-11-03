@@ -56,6 +56,7 @@ Tested on real hardware with a BBSHD controller.
 - Info submenu: firmware version, hardware, developer credit, website
 - Trip reset (with confirmation) and Factory reset
 - Statistics (read-only): ODO, average speed, average efficiency, energy used, run time, maximum power and maximum current over the display's lifetime
+- Trip History: the last 10 trips saved by "Trip reset", newest first, with their riding time. Opens the values of a trip, and a single trip can be deleted from there
 
 ## Installing (ST-Link)
 
@@ -230,6 +231,17 @@ RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same f
 ## Changelog
 
 Version history for the `SW102_BAF_X.Y.Z` firmware.
+
+### 0.1.9 (2026-11-03)
+
+- Trip History list: each row now shows the trip riding time instead of its distance, for example "1. 1h 45min"
+- Single trips can be deleted: open a trip, press DOWN to show "Delete this trip" (UP goes back), then press M. The trip is deleted at once and the following trips move up one number
+- Long menu items now scroll about a third faster
+
+### 0.1.8 (2026-11-02)
+
+- New "Trip History" menu item under "Trip reset": the last 10 trips, newest first. "Trip reset" (now "Confirm Trip Reset and Save") saves the trip before clearing TRIP; a reset at zero distance saves nothing, and with 10 trips saved the oldest is replaced. M opens a trip with the same values as the data screen, PWR goes back. Cleared by "Factory reset"
+- Statistics: 2 px separator lines
 
 ### 0.1.7 (2026-11-02)
 
