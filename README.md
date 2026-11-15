@@ -45,7 +45,7 @@ This firmware lets you program the motor controller directly from the display. N
 ### BBS-FW (open source firmware)
 
 - Two tables, **STANDARD** and **SPORT**, each with PAS 0-9: **CURRENT**, **CADENCE** and **SPEED** (in %)
-- Only these values are changed. All other BBS-FW settings stay as they are (use the BBS-FW configuration tool for them)
+- Only these values are changed. All other BBS-FW settings stay as they are. To change them, use the **EggSPEED** Android app ([Google Play](https://play.google.com/store/apps/details?id=app.spotrobotics.eggspeed)), which supports BBS-FW
 - New values work at once, no restart needed
 - **Holding UP + DOWN for 3 seconds works like the "SPORT" button** (set "Operation Mode Toggle" to "Sport Button" in BBS-FW)
 
