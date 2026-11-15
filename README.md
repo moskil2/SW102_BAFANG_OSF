@@ -152,15 +152,15 @@ The blue tape in the photos is just there so the drill doesn't accidentally scra
 
 <table>
 <tr>
-<td align="center"><img src="screenshots/open_1a.jpg" width="200"></td>
-<td align="center"><img src="screenshots/open_1b.jpg" width="200"></td>
-<td align="center"><img src="screenshots/open_2.jpg" width="200"></td>
-<td align="center"><img src="screenshots/open_3.jpg" width="200"></td>
+<td align="center"><img src="screenshots/open_1a.jpg" height="140"></td>
+<td align="center"><img src="screenshots/open_1b.jpg" height="140"></td>
+<td align="center"><img src="screenshots/open_2.jpg" height="140"></td>
+<td align="center"><img src="screenshots/open_3.jpg" height="140"></td>
 </tr>
 <tr>
-<td align="center"><img src="screenshots/open_4.jpg" width="200"></td>
-<td align="center"><img src="screenshots/open_5.jpg" width="200"></td>
-<td align="center"><img src="screenshots/open_6.jpg" width="200"></td>
+<td align="center"><img src="screenshots/open_4.jpg" height="140"></td>
+<td align="center"><img src="screenshots/open_5.jpg" height="140"></td>
+<td align="center"><img src="screenshots/open_6.jpg" height="140"></td>
 </tr>
 </table>
 
