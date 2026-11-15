@@ -31,6 +31,31 @@ Controllers running the open source BBS-FW firmware are supported too: select "C
 
 **With BBS-FW, holding UP + DOWN together for 3 seconds works like pressing the "SPORT" button: it switches between Standard and Sport. This works only if "Operation Mode Toggle" is set to "Sport Button" in the BBS-FW configuration tool.**
 
+## Programming the controller from the display
+
+This firmware lets you program the motor controller directly from the display. No laptop, cable or app is needed. Open the menu (hold M) and choose **"Bafang Assist Level Programming"**. First select your controller type in the menu: **"Controller: OEM"** or **"Controller: BBS-FW"**.
+
+<img src="screenshots/pas_programming.jpg" height="300" alt="Assist Level Programming on the display">
+
+### OEM (original Bafang firmware)
+
+- For each assist level PAS 0-9: **CURRENT** (current limit, in %) and **SPEED** (speed limit, in %)
+- **STREET/RACE**: a second, independent table (RACE) kept on the display. Turn it on with the "STREET/RACE" row (USE RACE). On the cockpit, hold UP + DOWN for 3 seconds to load STREET or RACE onto the controller
+
+### BBS-FW (open source firmware)
+
+- Two tables, **STANDARD** and **SPORT**, each with PAS 0-9: **CURRENT**, **CADENCE** and **SPEED** (in %)
+- Only these values are changed. All other BBS-FW settings stay as they are (use the BBS-FW configuration tool for them)
+- New values work at once, no restart needed
+- **Holding UP + DOWN for 3 seconds works like the "SPORT" button** (set "Operation Mode Toggle" to "Sport Button" in BBS-FW)
+
+### How to use it
+
+1. The display reads the controller when you open the screen. READ reads it again.
+2. UP/DOWN moves between rows. Press M on a value to edit it: UP/DOWN changes it (hold for faster change), M or PWR ends editing.
+3. Go to SAVE and press M. The display writes the values to the controller and shows "Saved!" when the controller confirms.
+4. PWR goes back without saving.
+
 ## Cockpit (main screen)
 
 - Top bar: battery voltage (left) and battery percentage (right); with STREET/RACE turned on, the active profile ("S" or "R") in between
@@ -57,7 +82,7 @@ Controllers running the open source BBS-FW firmware are supported too: select "C
 - Cockpit submenu: toggle separators, toggle the assist-level indicator ("PAS Icons"), choose the assist-level layout ("PAS Type": Type A/B), toggle a negative/cut-out style for the assist-level digit ("PAS Negativ"), turn the whole display upside down ("Rotate Screen 180deg" - UP/DOWN are swapped to match; remembered after power-off)
 - Screen test (fills the display white for a dead-pixel check)
 - Controller: OEM (default) or BBS-FW - picks how Assist Level Programming talks to the controller and what UP + DOWN does on the cockpit
-- Bafang Assist Level Programming: read the controller's per-assist-level (PAS 0-9) current and speed limits, edit them and save them back to the controller. Also holds the STREET/RACE option ("USE RACE"): a second, independent RACE table kept on the display and loaded onto the controller only when you switch to RACE on the cockpit. With Controller = BBS-FW the screen shows the two BBS-FW tables, STANDARD and SPORT, with current, cadence and speed for PAS 0-9; the other BBS-FW settings are left to the BBS-FW configuration tool. To switch Standard/Sport with UP + DOWN, set "Operation Mode Toggle" to "Sport Button" in BBS-FW
+- Bafang Assist Level Programming: program the controller's assist levels, see "Programming the controller from the display" above
 - Info submenu: firmware version, hardware, developer credit, website, selected controller (with the BBS-FW version)
 - Trip reset (with confirmation) and Factory reset
 - Statistics (read-only): ODO, average speed, average efficiency, energy used, run time, maximum power and maximum current over the display's lifetime
