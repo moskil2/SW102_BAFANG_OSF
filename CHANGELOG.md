@@ -2,6 +2,15 @@
 
 Version history for the `SW102_BAF_X.Y.Z` firmware.
 
+## 0.2.0 (2026-11-15)
+
+- New "Controller" menu setting: OEM (default) or BBS-FW. Select BBS-FW only if your controller runs the open source BBS-FW firmware. With OEM everything works as before
+- With BBS-FW, Assist Level Programming reads and writes the BBS-FW configuration and shows both of its tables, STANDARD and SPORT, with CURRENT, CADENCE and SPEED for PAS 0-9. Saving changes only these values, all other BBS-FW settings stay as they are. New values apply at once, no restart needed
+- With BBS-FW, holding UP + DOWN for 3 seconds switches Standard/Sport. This is the display's "Sport Button": set "Operation Mode Toggle" to "Sport Button" in the BBS-FW configuration tool. With "Off" the display shows "SPORT IS OFF IN BBS-FW". With "Lights Button" or "PAS x + Lights Button" the mode is switched with the light (UP long press), as set in BBS-FW. STREET/RACE is not used with BBS-FW
+- Info: new last line with the selected controller and the BBS-FW version read from the controller
+- Assist Level Programming: the double line above RACE no longer touches the row above it
+- The boot screen shows the correct version number (0.1.9 showed V0.1.8)
+
 ## 0.1.9 (2026-11-03)
 
 - Trip History list: each row now shows the trip riding time instead of its distance, for example "1. 1h 45min"

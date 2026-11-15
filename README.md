@@ -27,6 +27,8 @@ Uses the standard Bafang UART display protocol - the same protocol the stock dis
 
 Tested on real hardware with a BBSHD controller.
 
+Controllers running the open source BBS-FW firmware are supported too: select "Controller: BBS-FW" in the menu. BBS-FW support has not been tested on real hardware yet.
+
 ## Cockpit (main screen)
 
 - Top bar: battery voltage (left) and battery percentage (right); with STREET/RACE turned on, the active profile ("S" or "R") in between
@@ -37,7 +39,7 @@ Tested on real hardware with a BBSHD controller.
 - Average / current energy consumption row (Wh/km or Wh/mile)
 - Optional separator lines between rows (toggle in menu)
 - Three cockpit layouts, cycled with a short press of M: the standard layout above, a second one that merges the speed and power rows into one large whole-number speed readout, and a third "data screen" listing trip distance, average and top speed, total and moving time, maximum current and power, average consumption (Wh/km) and energy used (Wh). All of these values are remembered across power-off, like TRIP, and cleared only by "Trip reset" (consumption is the average over the trip: energy used divided by trip distance)
-- Controls: UP/DOWN short press = assist level up/down; UP long press = toggle headlight; DOWN long press (hold) = walk assist; M short press = cycle cockpit layout; M long press = open menu; UP + DOWN held together for 3 seconds = switch STREET/RACE (when turned on)
+- Controls: UP/DOWN short press = assist level up/down; UP long press = toggle headlight; DOWN long press (hold) = walk assist; M short press = cycle cockpit layout; M long press = open menu; UP + DOWN held together for 3 seconds = switch STREET/RACE (when turned on); with Controller = BBS-FW it switches Standard/Sport instead (the BBS-FW "Sport Button")
 
 ## Menu
 
@@ -52,8 +54,9 @@ Tested on real hardware with a BBSHD controller.
 - Brightness submenu: manual or automatic mode; in manual mode an adjustable level with live preview (the level entry is only listed in manual mode)
 - Cockpit submenu: toggle separators, toggle the assist-level indicator ("PAS Icons"), choose the assist-level layout ("PAS Type": Type A/B), toggle a negative/cut-out style for the assist-level digit ("PAS Negativ"), turn the whole display upside down ("Rotate Screen 180deg" - UP/DOWN are swapped to match; remembered after power-off)
 - Screen test (fills the display white for a dead-pixel check)
-- Bafang Assist Level Programming: read the controller's per-assist-level (PAS 0-9) current and speed limits, edit them and save them back to the controller. Also holds the STREET/RACE option ("USE RACE"): a second, independent RACE table kept on the display and loaded onto the controller only when you switch to RACE on the cockpit
-- Info submenu: firmware version, hardware, developer credit, website
+- Controller: OEM (default) or BBS-FW - picks how Assist Level Programming talks to the controller and what UP + DOWN does on the cockpit
+- Bafang Assist Level Programming: read the controller's per-assist-level (PAS 0-9) current and speed limits, edit them and save them back to the controller. Also holds the STREET/RACE option ("USE RACE"): a second, independent RACE table kept on the display and loaded onto the controller only when you switch to RACE on the cockpit. With Controller = BBS-FW the screen shows the two BBS-FW tables, STANDARD and SPORT, with current, cadence and speed for PAS 0-9; the other BBS-FW settings are left to the BBS-FW configuration tool. To switch Standard/Sport with UP + DOWN, set "Operation Mode Toggle" to "Sport Button" in BBS-FW
+- Info submenu: firmware version, hardware, developer credit, website, selected controller (with the BBS-FW version)
 - Trip reset (with confirmation) and Factory reset
 - Statistics (read-only): ODO, average speed, average efficiency, energy used, run time, maximum power and maximum current over the display's lifetime
 - Trip History: the last 10 trips saved by "Trip reset", newest first, with their riding time. Opens the values of a trip, and a single trip can be deleted from there
@@ -68,7 +71,7 @@ The simple, end-user version of the flashing procedure - tested on real hardware
 - A Windows PC
 - **OpenOCD** - download [`xpack-openocd-0.12.0-7-win32-x64.zip`](https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-win32-x64.zip) and unzip it to `C:\OpenOCD`. The zip contains its own folder, so OpenOCD ends up in `C:\OpenOCD\xpack-openocd-0.12.0-7\bin`
 - The **ST-Link driver** (see step 1 below)
-- The firmware `.hex` file: [`SW102_BAF_0.1.9.hex`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.9/SW102_BAF_0.1.9.hex) - download it, create the folder `C:\SW102` and move the downloaded `.hex` there
+- The firmware `.hex` file: [`SW102_BAF_0.2.0.hex`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.2.0/SW102_BAF_0.2.0.hex) - download it, create the folder `C:\SW102` and move the downloaded `.hex` there
 
 This single `.hex` file is a complete, ready-to-flash image - it already contains the bootloader, the Nordic SoftDevice (BLE stack), and the application, merged together at build time. You don't need to download anything else from any other repository.
 
@@ -147,7 +150,7 @@ The blue tape in the photos is just there so the drill doesn't accidentally scra
    ```
 4. Run the write-and-verify command (paste it exactly, then press Enter). If you saved the `.hex` somewhere other than `C:\SW102`, change the path, and write it with `/`, not `\` (OpenOCD drops `\`, so `C:\SW102\...` would not be found):
    ```
-   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; flash write_image C:/SW102/SW102_BAF_0.1.9.hex; verify_image C:/SW102/SW102_BAF_0.1.9.hex; reset halt; resume; shutdown"
+   openocd.exe -f interface/stlink.cfg -f target/nordic/nrf51.cfg -c "init; reset init; flash write_image C:/SW102/SW102_BAF_0.2.0.hex; verify_image C:/SW102/SW102_BAF_0.2.0.hex; reset halt; resume; shutdown"
    ```
 
 These must be two separate commands, run one after the other - see Troubleshooting below for why. If `verify_image` reports no errors, the flash succeeded.
@@ -171,7 +174,7 @@ Once the bootloader is installed (first flash via ST-Link), later firmware updat
 ### What you need
 
 - The **nRF Connect** app by Nordic Semiconductor: [Android (Google Play)](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp), [iOS (App Store)](https://apps.apple.com/app/nrf-connect-for-mobile/id1054362403)
-- The firmware update package: [`SW102_BAF_FW_0.1.9.zip`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.1.9/SW102_BAF_FW_0.1.9.zip) - open the link on your phone and download it there
+- The firmware update package: [`SW102_BAF_FW_0.2.0.zip`](https://github.com/moskil2/SW102_BAFANG_OSF/releases/download/0.2.0/SW102_BAF_FW_0.2.0.zip) - open the link on your phone and download it there
 
 ### Before updating
 
@@ -211,7 +214,7 @@ hand-drawn fonts, used to iterate on the UI before touching C code.
 
 ## Status
 
-Firmware tested on real hardware up to `SW102_BAF_0.1.8` (flashed via SWD/OpenOCD and an ST-Link V2). Current version `SW102_BAF_0.1.9`, not yet tested on hardware. Working on hardware: Bafang UART protocol (telemetry, lights, assist), current and voltage calibration, trip/odo with reset, km/h<->mph unit switch, cockpit layouts and data screen, Assist Level Programming, STREET/RACE profiles, menu with a marker icon instead of highlight, boot screen with version number. Versioning convention: `SW102_BAF_X.Y.Z`, each version flashed to hardware is saved as its own `.hex` file (never overwritten). Builds cleanly on both toolchains (ARM and emulator). Details and history in `CHANGELOG.md`.
+Firmware tested on real hardware up to `SW102_BAF_0.1.8` (flashed via SWD/OpenOCD and an ST-Link V2). Current version `SW102_BAF_0.2.0`, not yet tested on hardware. Working on hardware: Bafang UART protocol (telemetry, lights, assist), current and voltage calibration, trip/odo with reset, km/h<->mph unit switch, cockpit layouts and data screen, Assist Level Programming, STREET/RACE profiles, menu with a marker icon instead of highlight, boot screen with version number. Versioning convention: `SW102_BAF_X.Y.Z`, each version flashed to hardware is saved as its own `.hex` file (never overwritten). Builds cleanly on both toolchains (ARM and emulator). Details and history in `CHANGELOG.md`.
 
 ## License and provenance
 
@@ -219,18 +222,27 @@ Licensed under GPL-3.0 (see `source/LICENSE`). Based on [`anszom/SW102_LCD`](htt
 
 ## Resources
 
-Current build (v0.1.9) flash/RAM usage on the nRF51822:
+Current build (v0.2.0) flash/RAM usage on the nRF51822:
 
 | Resource | Budget | Used | Free |
 |---|---|---|---|
-| Flash (application region) | 130,048 B (127.0 KB) | 66,520 B (65.0 KB) | 63,528 B (62.0 KB, 48.9%) |
-| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 6,864 B (6.7 KB) | 14,640 B (14.3 KB, 68.1%) |
+| Flash (application region) | 130,048 B (127.0 KB) | 70,692 B (69.0 KB) | 59,356 B (58.0 KB, 45.6%) |
+| RAM (after SoftDevice reservation) | 21,504 B (21.0 KB) | 7,432 B (7.3 KB) | 14,072 B (13.7 KB, 65.4%) |
 
 RAM figure is static `.data`+`.bss` only - runtime stack/heap live in the same free space, not counted separately.
 
 ## Changelog
 
 Version history for the `SW102_BAF_X.Y.Z` firmware.
+
+### 0.2.0 (2026-11-15)
+
+- New "Controller" menu setting: OEM (default) or BBS-FW. Select BBS-FW only if your controller runs the open source BBS-FW firmware. With OEM everything works as before
+- With BBS-FW, Assist Level Programming reads and writes the BBS-FW configuration and shows both of its tables, STANDARD and SPORT, with CURRENT, CADENCE and SPEED for PAS 0-9. Saving changes only these values, all other BBS-FW settings stay as they are. New values apply at once, no restart needed
+- With BBS-FW, holding UP + DOWN for 3 seconds switches Standard/Sport. This is the display's "Sport Button": set "Operation Mode Toggle" to "Sport Button" in the BBS-FW configuration tool. With "Off" the display shows "SPORT IS OFF IN BBS-FW". With "Lights Button" or "PAS x + Lights Button" the mode is switched with the light (UP long press), as set in BBS-FW. STREET/RACE is not used with BBS-FW
+- Info: new last line with the selected controller and the BBS-FW version read from the controller
+- Assist Level Programming: the double line above RACE no longer touches the row above it
+- The boot screen shows the correct version number (0.1.9 showed V0.1.8)
 
 ### 0.1.9 (2026-11-03)
 
