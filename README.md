@@ -29,6 +29,8 @@ Tested on real hardware with a BBSHD controller.
 
 Controllers running the open source BBS-FW firmware are supported too: select "Controller: BBS-FW" in the menu. BBS-FW support has not been tested on real hardware yet.
 
+**With BBS-FW, holding UP + DOWN together for 3 seconds works like pressing the "SPORT" button: it switches between Standard and Sport. This works only if "Operation Mode Toggle" is set to "Sport Button" in the BBS-FW configuration tool.**
+
 ## Cockpit (main screen)
 
 - Top bar: battery voltage (left) and battery percentage (right); with STREET/RACE turned on, the active profile ("S" or "R") in between
