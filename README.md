@@ -27,7 +27,7 @@ Uses the standard Bafang UART display protocol - the same protocol the stock dis
 
 Tested on real hardware with a BBSHD controller.
 
-Controllers running the open source BBS-FW firmware are supported too: select "Controller: BBS-FW" in the menu. BBS-FW support has not been tested on real hardware yet.
+Controllers running the open source BBS-FW firmware are supported too: select "Controller: BBS-FW" in the menu.
 
 **With BBS-FW, holding UP + DOWN together for 3 seconds works like pressing the "SPORT" button: it switches between Standard and Sport. This works only if "Operation Mode Toggle" is set to "Sport Button" in the BBS-FW configuration tool.**
 
@@ -241,7 +241,7 @@ hand-drawn fonts, used to iterate on the UI before touching C code.
 
 ## Status
 
-Firmware tested on real hardware up to `SW102_BAF_0.1.8` (flashed via SWD/OpenOCD and an ST-Link V2). Current version `SW102_BAF_0.2.0`, not yet tested on hardware. Working on hardware: Bafang UART protocol (telemetry, lights, assist), current and voltage calibration, trip/odo with reset, km/h<->mph unit switch, cockpit layouts and data screen, Assist Level Programming, STREET/RACE profiles, menu with a marker icon instead of highlight, boot screen with version number. Versioning convention: `SW102_BAF_X.Y.Z`, each version flashed to hardware is saved as its own `.hex` file (never overwritten). Builds cleanly on both toolchains (ARM and emulator). Details and history in `CHANGELOG.md`.
+Firmware tested on real hardware (flashed via SWD/OpenOCD and an ST-Link V2). Current version `SW102_BAF_0.2.0`. Working on hardware: Bafang UART protocol (telemetry, lights, assist), current and voltage calibration, trip/odo with reset, km/h<->mph unit switch, cockpit layouts and data screen, Assist Level Programming, STREET/RACE profiles, menu with a marker icon instead of highlight, boot screen with version number. Versioning convention: `SW102_BAF_X.Y.Z`, each version flashed to hardware is saved as its own `.hex` file (never overwritten). Builds cleanly on both toolchains (ARM and emulator). Details and history in `CHANGELOG.md`.
 
 ## License and provenance
 
