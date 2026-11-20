@@ -247,7 +247,7 @@ Firmware tested on real hardware (flashed via SWD/OpenOCD and an ST-Link V2). Cu
 
 Licensed under GPL-3.0 (see `source/LICENSE`). Based on [`anszom/SW102_LCD`](https://github.com/anszom/SW102_LCD) (itself a fork of `OpenSourceEBike/Color_LCD`), branch `sw102-new`, commit `6e3665da`. The source code is in `source/`: `sw102_lcd.patch` with the changes to the base files, and the new files under `source/firmware/`.
 
-**Fonts.** The following fonts were hand-drawn by Tomasz Pieczara: `font_speed_35`, `font_speed_small_v2`, `font_bigspeed`, `font_speed_large`, `font_speed`, `font_speed_small`, `font_battery`, `font_power`, `font_unit`, `font_odo`. © Tomasz Pieczara. They are distributed under GPL-3.0 only as part of this firmware. No other license is granted; all other rights reserved. `font_full` and `font_2nd` come from the base project (`anszom/SW102_LCD`, GPL-3.0).
+**Fonts.** The following fonts were hand-drawn by Tomasz Pieczara: `font_speed_35`, `font_speed_small_v2`, `font_bigspeed`, `font_speed_large`, `font_speed`, `font_speed_small`, `font_battery`, `font_power`, `font_unit`, `font_odo`, `font_full`. © Tomasz Pieczara. They are distributed under GPL-3.0 only as part of this firmware. No other license is granted; all other rights reserved. `font_2nd` comes from the base project (`anszom/SW102_LCD`, GPL-3.0).
 
 ## Resources
 
